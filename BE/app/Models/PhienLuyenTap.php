@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class PhienLuyenTap extends Model
+{
+    protected $table = 'phien_luyen_taps';
+
+    public $timestamps = false;
+
+    protected $fillable = [
+        'nguoi_dung_id',
+        'bai_hoc_id',
+        'thoi_gian_bat_dau',
+        'thoi_gian_ket_thuc',
+        'tong_diem',
+        'ngay_tao', 
+    ];
+}
