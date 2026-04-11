@@ -53,7 +53,7 @@ const routes = [
     meta: { layout: "client" },
   },
   {
-    path: "/chi-tiet-bai-hoc",
+    path: "/chi-tiet-bai-hoc/:id",
     component: () => import("../components/KhachHang/ChiTietBaiHoc/index.vue"),
     meta: { layout: "client" },
   },
