@@ -15,7 +15,20 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/check-token', [NguoiDungController::class, 'checkToken']);
 Route::post('/login-google', [NguoiDungController::class, 'loginGoogle']);
 Route::post('/dang-nhap', [NguoiDungController::class, 'login']);
+Route::post('/login-google', [NguoiDungController::class, 'loginGoogle']);
 Route::post('/dang-ky', [NguoiDungController::class, 'register']);
+
+Route::post('/quen-mat-khau', [NguoiDungController::class, 'forgotPassword']);
+Route::post('/dat-lai-mat-khau', [NguoiDungController::class, 'resetPassword']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/check-token', [NguoiDungController::class, 'checkToken']);
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::post('/dang-xuat', [NguoiDungController::class, 'logOut']);
+
+});
 
 Route::prefix('/danh-muc-bai-hoc')->group(function () {
 
