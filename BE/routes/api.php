@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BaiHocController;
 use App\Http\Controllers\DanhMucBaiHocController;
 use App\Http\Controllers\NguoiDungController;
@@ -12,6 +13,16 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 });
+
+Route::prefix('/admin/quan-ly-tai-khoan')->group(function () {
+    Route::post('/create', [AdminController::class, 'store']);
+    Route::get('/data', [AdminController::class, 'getdata']);
+    Route::post('/update', [AdminController::class, 'update']);
+    Route::post('/change-status', [AdminController::class, 'changeStatus']);
+    Route::post('/tim-kiem', [AdminController::class, 'search']);
+    Route::post('/filter-by-role', [AdminController::class, 'filterByRole']);
+});
+
 Route::get('/check-token', [NguoiDungController::class, 'checkToken']);
 Route::post('/login-google', [NguoiDungController::class, 'loginGoogle']);
 Route::post('/dang-nhap', [NguoiDungController::class, 'login']);
