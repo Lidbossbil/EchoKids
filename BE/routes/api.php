@@ -104,6 +104,7 @@ Route::prefix('/teacher')->middleware(['auth:sanctum', 'role:2'])->group(functio
     });
 
     Route::prefix('/gv-hv')->group(function () {
+        Route::get('/dashboard', [QuanHeGvHvController::class, 'dashboardTongQuan']);
         Route::get('/hoc-vien', [QuanHeGvHvController::class, 'danhSachHocVien']);
         Route::get('/hoc-vien/{id}', [QuanHeGvHvController::class, 'chiTietHocVien']);
         Route::get('/bai-hoc-goi-y', [QuanHeGvHvController::class, 'danhSachBaiHocGoiY']);
