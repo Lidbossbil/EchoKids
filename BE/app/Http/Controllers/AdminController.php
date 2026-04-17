@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChangeStatusKiemDuyetRequest;
 use App\Http\Requests\ChangeStatusQuanLyTaiKhoanRequest;
 use App\Http\Requests\CreateQuanLyTaiKhoanRequest;
 use App\Http\Requests\FilterByRoleQuanLyTaiKhoanRequest;
@@ -90,7 +91,7 @@ class AdminController extends Controller
             ], 404);
         }
 
-        $nguoiDung->is_block = (int) !$nguoiDung->is_block;
+        $nguoiDung->trang_thai = !$nguoiDung->trang_thai;
         $nguoiDung->save();
 
         return response()->json([
