@@ -39,33 +39,6 @@ class TeacherQuanLyBaiHocController extends Controller
         ]);
     }
 
-    public function storeDanhMuc(StoreDanhMucBaiHocRequest $request): JsonResponse
-    {
-        $icon = $request->input('icon');
-        $moTaPayload = $icon !== null && $icon !== ''
-            ? json_encode(['icon' => $icon], JSON_UNESCAPED_UNICODE)
-            : null;
-
-        $danhMuc = DanhMucBaiHoc::create([
-            'ten_danh_muc' => $request->ten_danh_muc,
-            'slug_danh_muc' => $request->slug_danh_muc,
-            'mo_ta' => $moTaPayload,
-            'thu_tu' => $request->thu_tu ?? 1,
-            'trang_thai' => (int) $request->input('trang_thai', 1),
-        ]);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Đã thêm danh mục thành công',
-            'data' => [
-                'id' => $danhMuc->id,
-                'ten' => $danhMuc->ten_danh_muc,
-                'ten_danh_muc' => $danhMuc->ten_danh_muc,
-                'icon' => $this->iconFromMoTa($danhMuc->mo_ta),
-                'so_bai' => 0,
-            ],
-        ], 201);
-    }
 
     public function updateDanhMuc(UpdateDanhMucBaiHocRequest $request, int $id): JsonResponse
     {
@@ -147,8 +120,7 @@ class TeacherQuanLyBaiHocController extends Controller
                     'mo_ta' => $baiHoc->mo_ta,
                     'cap_do' => $baiHoc->cap_do,
                     'so_luong_tu' => $baiHoc->tuVungs->count(),
-                    'trang_thai' => $this->mapTrangThaiBaiHocToTeacherUi($baiHoc->trang_thai),
-                    'trang_thai_so' => (int) $baiHoc->trang_thai,
+                    'trang_thai' => (int) $baiHoc->trang_thai,
                 ];
             });
 
@@ -180,7 +152,7 @@ class TeacherQuanLyBaiHocController extends Controller
                 'mo_ta' => $request->mo_ta,
                 'cap_do' => $request->cap_do,
                 'thu_tu' => $thuTu,
-                'trang_thai' => (int) $request->input('trang_thai', 1),
+                'trang_thai' => (int) $request->input('trang_thai', 0),
             ]);
         });
 
@@ -196,8 +168,7 @@ class TeacherQuanLyBaiHocController extends Controller
                 'mo_ta' => $baiHoc->mo_ta,
                 'cap_do' => $baiHoc->cap_do,
                 'so_luong_tu' => $baiHoc->tuVungs->count(),
-                'trang_thai' => $this->mapTrangThaiBaiHocToTeacherUi($baiHoc->trang_thai),
-                'trang_thai_so' => (int) $baiHoc->trang_thai,
+                'trang_thai' => (int) $baiHoc->trang_thai,
             ],
         ], 201);
     }
@@ -267,8 +238,7 @@ class TeacherQuanLyBaiHocController extends Controller
                 'mo_ta' => $baiHoc->mo_ta,
                 'cap_do' => $baiHoc->cap_do,
                 'so_luong_tu' => $baiHoc->tuVungs->count(),
-                'trang_thai' => $this->mapTrangThaiBaiHocToTeacherUi($baiHoc->trang_thai),
-                'trang_thai_so' => (int) $baiHoc->trang_thai,
+                'trang_thai' => (int) $baiHoc->trang_thai,
             ],
         ]);
     }
@@ -306,12 +276,8 @@ class TeacherQuanLyBaiHocController extends Controller
     }
 
     /**
-     * Giáo viên: 1 = hiển thị/đã duyệt (Hoạt động), 0 = nháp/chờ duyệt, 2 = từ chối (vẫn coi là nháp trên UI đơn giản).
+     * Giáo viên: 1 = Đã duyệt, 0 = Đợi duyệt (mặc định khi tạo mới).
      */
-    private function mapTrangThaiBaiHocToTeacherUi(?int $trangThai): string
-    {
-        return (int) $trangThai === 1 ? 'hoat_dong' : 'nhap';
-    }
 
     private function nextThuTuTrongDanhMuc(int $danhMucId): int
     {
