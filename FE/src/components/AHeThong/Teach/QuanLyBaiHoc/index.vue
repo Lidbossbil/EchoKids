@@ -45,22 +45,6 @@
                                         :class="danh_muc_dang_chon === dm.id ? 'bg-white text-primary' : 'bg-secondary'">
                                         {{ demSoBaiHoc(dm) }}
                                     </span>
-                                    <div class="dropdown" @click.stop v-if="danh_muc_dang_chon === dm.id">
-                                        <button class="btn btn-sm p-0 text-white" type="button"
-                                            data-bs-toggle="dropdown">
-                                            <i class="fa-solid fa-ellipsis-vertical px-1"></i>
-                                        </button>
-                                        <ul class="dropdown-menu shadow-sm border-0">
-                                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                                    data-bs-target="#danhMucModal" @click.prevent="suaDanhMuc(dm)"><i
-                                                        class="fa-solid fa-pen text-primary me-2"></i>Sửa danh mục</a>
-                                            </li>
-                                            <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal"
-                                                    data-bs-target="#xoaModal"
-                                                    @click.prevent="xoaDoiTuong(dm, 'danh_muc')"><i
-                                                        class="fa-solid fa-trash me-2"></i>Xóa danh mục</a></li>
-                                        </ul>
-                                    </div>
                                 </div>
                             </button>
                         </div>

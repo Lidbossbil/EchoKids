@@ -23,7 +23,7 @@ class AdminController extends Controller
             'mat_khau' => Hash::make($request->input('mat_khau', $request->input('password'))),
             'sdt' => $request->input('sdt', $request->input('phone')),
             'vai_tro_id' => $vaiTroId ?? NguoiDung::ROLE_USER,
-            'trang_thai' => (int) $request->input('trang_thai', $request->boolean('isActive', true) ? 1 : 0),
+            'is_block' => $this->resolveIsBlock($request),
         ]);
 
         return response()->json([
@@ -59,7 +59,7 @@ class AdminController extends Controller
             'ho_ten' => $request->input('ho_ten', $request->input('name', $nguoiDung->ho_ten)),
             'email' => $request->input('email', $nguoiDung->email),
             'sdt' => $request->input('sdt', $request->input('phone', $nguoiDung->sdt)),
-            'trang_thai' => (int) $request->input('trang_thai', $request->boolean('isActive', (bool) $nguoiDung->trang_thai) ? 1 : 0),
+            'is_block' => $this->resolveIsBlock($request, (int) $nguoiDung->is_block),
         ];
 
         if ($vaiTroId !== null) {
@@ -163,5 +163,23 @@ class AdminController extends Controller
 
         $vaiTro = VaiTro::whereRaw('LOWER(ten_vai_tro) = ?', [$normalized])->first();
         return $vaiTro?->id;
+    }
+
+    private function resolveIsBlock($request, ?int $default = null): int
+    {
+        if ($request->has('is_block')) {
+            return (int) $request->boolean('is_block');
+        }
+
+        if ($request->has('trang_thai')) {
+            $isActive = (int) $request->input('trang_thai') === 1;
+            return $isActive ? 0 : 1;
+        }
+
+        if ($request->has('isActive')) {
+            return $request->boolean('isActive') ? 0 : 1;
+        }
+
+        return $default ?? 0;
     }
 }
