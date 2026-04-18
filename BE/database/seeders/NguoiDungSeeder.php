@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,7 @@ class NguoiDungSeeder extends Seeder
      */
     public function run(): void
     {
+
         $adminRole = DB::table('vai_tros')->where('ten_vai_tro', 'admin')->first()->id;
         $gvRole = DB::table('vai_tros')->where('ten_vai_tro', 'giao_vien')->first()->id;
         $hvRole = DB::table('vai_tros')->where('ten_vai_tro', 'nguoi_dung')->first()->id;
