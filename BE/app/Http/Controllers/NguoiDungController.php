@@ -25,6 +25,13 @@ use App\Mail\QuenMatKhauMail;
 class NguoiDungController extends Controller
 {
     private const BLOCKED_ACCOUNT_MESSAGE = 'Tài khoản của bạn đã vi phạm chính sách bảo mật của chúng tôi';
+    private const ACTIVE_STATUS = 0;
+    private const BLOCKED_STATUS = 1;
+
+    private function isBlocked(NguoiDung $user): bool
+    {
+        return (int) ($user->trang_thai ?? self::ACTIVE_STATUS) === self::BLOCKED_STATUS;
+    }
 
     private function resolveAvatarUrl(?string $raw): ?string
     {
@@ -250,7 +257,7 @@ class NguoiDungController extends Controller
                 'sdt'        => preg_replace('/[^0-9]/', '', $request->sdt),
                 'ngay_sinh'  => $request->ngay_sinh,
                 'vai_tro_id' => 3,
-                'trang_thai' => 1,
+                'trang_thai' => self::ACTIVE_STATUS,
             ]);
 
             return response()->json([
@@ -322,7 +329,7 @@ class NguoiDungController extends Controller
             $user = NguoiDung::where('email', $email)->first();
 
             if ($user) {
-                if ((int) ($user->is_block ?? 0) === 1) {
+                if ($this->isBlocked($user)) {
                     return response()->json([
                         'status'  => false,
                         'message' => self::BLOCKED_ACCOUNT_MESSAGE,
@@ -349,7 +356,7 @@ class NguoiDungController extends Controller
                     'sdt'        => null,
                     'ngay_sinh'  => null,
                     'vai_tro_id' => 3,
-                    'trang_thai' => 1,
+                    'trang_thai' => self::ACTIVE_STATUS,
                 ]);
 
                 $token = $newUser->createToken('token_nguoi_dung')->plainTextToken;
@@ -425,7 +432,7 @@ class NguoiDungController extends Controller
         $user = NguoiDung::where('email', $request->email)->first();
 
         if ($user && Hash::check($request->password, $user->mat_khau)) {
-            if ((int) ($user->is_block ?? 0) === 1) {
+            if ($this->isBlocked($user)) {
                 return response()->json([
                     'status'  => 0,
                     'message' => self::BLOCKED_ACCOUNT_MESSAGE,
@@ -457,7 +464,7 @@ class NguoiDungController extends Controller
     {
         $userLogin = Auth::guard('sanctum')->user();
         if ($userLogin) {
-            if ((int) ($userLogin->is_block ?? 0) === 1) {
+            if ($this->isBlocked($userLogin)) {
                 return response()->json([
                     'status'    => false,
                     'message'   => self::BLOCKED_ACCOUNT_MESSAGE,
