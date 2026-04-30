@@ -15,7 +15,7 @@ class CheckRoleMiddleware
     {
         $user = $request->user();
 
-        if ($user && (int) ($user->is_block ?? 0) === 1) {
+        if ($user && (int) ($user->trang_thai ?? 0) === 1) {
             $token = $user->currentAccessToken();
             if ($token) {
                 $token->delete();

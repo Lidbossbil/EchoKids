@@ -23,19 +23,19 @@ class AdminController extends Controller
             'mat_khau' => Hash::make($request->input('mat_khau', $request->input('password'))),
             'sdt' => $request->input('sdt', $request->input('phone')),
             'vai_tro_id' => $vaiTroId ?? NguoiDung::ROLE_USER,
-            'is_block' => $this->resolveIsBlock($request),
+            'trang_thai' => $this->resolveTrangThai($request),
         ]);
 
         return response()->json([
             'status' => true,
             'message' => 'Admin đã tạo tài khoản ' . $nguoiDung->ho_ten . ' thành công ',
-            'data' => $nguoiDung->load('vaiTro'),
+            'data' => $this->formatUser($nguoiDung->load('vaiTro')),
         ]);
     }
 
     public function getdata()
     {
-        $data = NguoiDung::with('vaiTro')->orderByDesc('id')->get();
+        $data = NguoiDung::with('vaiTro')->orderByDesc('id')->get()->map(fn($u) => $this->formatUser($u));
 
         return response()->json([
             'status' => true,
@@ -59,7 +59,7 @@ class AdminController extends Controller
             'ho_ten' => $request->input('ho_ten', $request->input('name', $nguoiDung->ho_ten)),
             'email' => $request->input('email', $nguoiDung->email),
             'sdt' => $request->input('sdt', $request->input('phone', $nguoiDung->sdt)),
-            'is_block' => $this->resolveIsBlock($request, (int) $nguoiDung->is_block),
+            'trang_thai' => $this->resolveTrangThai($request, (int) $nguoiDung->trang_thai),
         ];
 
         if ($vaiTroId !== null) {
@@ -76,7 +76,7 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Admin đã cập nhật tài khoản ' . $nguoiDung->ho_ten . ' thành công ',
-            'data' => $nguoiDung->fresh()->load('vaiTro'),
+            'data' => $this->formatUser($nguoiDung->fresh()->load('vaiTro')),
         ]);
     }
 
@@ -90,16 +90,16 @@ class AdminController extends Controller
             ], 404);
         }
 
-        $nguoiDung->is_block = (int) !$nguoiDung->is_block;
+        $nguoiDung->trang_thai = ((int) $nguoiDung->trang_thai === 1) ? 0 : 1;
         $nguoiDung->save();
-        if ((int) $nguoiDung->is_block === 1) {
+        if ((int) $nguoiDung->trang_thai === 1) {
             $nguoiDung->tokens()->delete();
         }
 
         return response()->json([
             'status' => true,
             'message' => 'Admin đã đổi trạng thái ' . $nguoiDung->ho_ten . ' thành công ',
-            'data' => $nguoiDung,
+            'data' => $this->formatUser($nguoiDung),
         ]);
     }
 
@@ -116,7 +116,8 @@ class AdminController extends Controller
                 });
             })
             ->orderByDesc('id')
-            ->get();
+            ->get()
+            ->map(fn($u) => $this->formatUser($u));
 
         return response()->json([
             'status' => true,
@@ -133,7 +134,8 @@ class AdminController extends Controller
                 $query->where('vai_tro_id', $vaiTroId);
             })
             ->orderByDesc('id')
-            ->get();
+            ->get()
+            ->map(fn($u) => $this->formatUser($u));
 
         return response()->json([
             'status' => true,
@@ -168,21 +170,26 @@ class AdminController extends Controller
         return $vaiTro?->id;
     }
 
-    private function resolveIsBlock($request, ?int $default = null): int
+    private function resolveTrangThai($request, ?int $default = null): int
     {
         if ($request->has('is_block')) {
-            return (int) $request->boolean('is_block');
+            return $request->boolean('is_block') ? 1 : 0;
         }
 
         if ($request->has('trang_thai')) {
-            $isActive = (int) $request->input('trang_thai') === 1;
-            return $isActive ? 0 : 1;
+            return ((int) $request->input('trang_thai') === 1) ? 1 : 0;
         }
 
         if ($request->has('isActive')) {
             return $request->boolean('isActive') ? 0 : 1;
         }
 
-        return $default ?? 0;
+        return ($default === 1) ? 1 : 0;
+    }
+
+    private function formatUser(NguoiDung $user): NguoiDung
+    {
+        $user->setAttribute('is_block', (int) ($user->trang_thai ?? 0) === 1 ? 1 : 0);
+        return $user;
     }
 }
