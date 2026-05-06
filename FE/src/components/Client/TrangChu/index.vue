@@ -269,86 +269,27 @@
         </div>
 
         <div class="row g-4 mb-5">
-          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
-            <div
-              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
-            >
+          <div
+            v-for="(cd, idx) in chuDeNoiBat"
+            :key="cd.id || idx"
+            class="col-lg-3 col-md-6 wow fadeInUp"
+            :data-wow-delay="`${0.1 + idx * 0.1}s`"
+          >
+            <div class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100">
               <div class="favorite-image-wrapper">
                 <img
-                  src="/Client/images/classes-1.jpg"
-                  alt="Động vật"
+                  :src="anhChuDe(idx)"
+                  :alt="cd.ten_danh_muc"
                   class="img-fluid w-100 favorite-image"
                 />
               </div>
 
               <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">Động Vật</h5>
-                <p class="text-muted small mb-0">
-                  Khám phá thế giới động vật vui nhộn.
+                <h5 class="fw-bold mb-2 text-dark">{{ cd.ten_danh_muc }}</h5>
+                <p class="text-muted small mb-1">
+                  {{ cd.mo_ta || "Chủ đề luyện phát âm hấp dẫn cho bé." }}
                 </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
-            <div
-              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
-            >
-              <div class="favorite-image-wrapper">
-                <img
-                  src="/Client/images/classes-2.jpg"
-                  alt="Màu sắc"
-                  class="img-fluid w-100 favorite-image"
-                />
-              </div>
-
-              <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">Màu Sắc</h5>
-                <p class="text-muted small mb-0">
-                  Học nhận biết và gọi tên các màu sắc.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
-            <div
-              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
-            >
-              <div class="favorite-image-wrapper">
-                <img
-                  src="/Client/images/classes-3.jpg"
-                  alt="Âm nhạc"
-                  class="img-fluid w-100 favorite-image"
-                />
-              </div>
-
-              <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">Âm Nhạc</h5>
-                <p class="text-muted small mb-0">
-                  Làm quen với âm thanh và nhạc cụ.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
-            <div
-              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
-            >
-              <div class="favorite-image-wrapper">
-                <img
-                  src="/Client/images/classes-4.jpg"
-                  alt="Giao tiếp"
-                  class="img-fluid w-100 favorite-image"
-                />
-              </div>
-
-              <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">Giao Tiếp</h5>
-                <p class="text-muted small mb-0">
-                  Luyện nói các câu đơn giản mỗi ngày.
-                </p>
+                <small class="text-primary fw-semibold">{{ cd.luot_luyen || 0 }} lượt luyện</small>
               </div>
             </div>
           </div>
@@ -374,100 +315,32 @@
         </div>
 
         <div class="row g-4">
-          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
-            <div
-              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
-            >
+          <div
+            v-for="(bh, idx) in baiHocNoiBat"
+            :key="bh.id || idx"
+            class="col-lg-3 col-md-6 wow fadeInUp"
+            :data-wow-delay="`${0.1 + idx * 0.1}s`"
+          >
+            <div class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100">
               <div class="favorite-image-wrapper">
                 <img
-                  src="/Client/images/classes-5.jpg"
-                  alt="Phát âm chữ cái"
+                  :src="anhBaiHoc(idx)"
+                  :alt="bh.tieu_de"
                   class="img-fluid w-100 favorite-image"
                 />
               </div>
 
               <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">Phát Âm Chữ Cái</h5>
+                <h5 class="fw-bold mb-2 text-dark">{{ bh.tieu_de }}</h5>
+                <p class="text-muted small mb-2">
+                  {{ bh.mo_ta || "Bài học luyện phát âm phù hợp cho bé." }}
+                </p>
                 <p class="text-muted small mb-3">
-                  Bé luyện phát âm bảng chữ cái tiếng Việt.
+                  <span class="me-2">{{ bh.so_tu_vung || 0 }} từ</span>
+                  <span>{{ bh.luot_luyen || 0 }} lượt luyện</span>
                 </p>
 
-                <button class="btn btn-outline-primary rounded-pill px-4">
-                  Học Ngay
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
-            <div
-              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
-            >
-              <div class="favorite-image-wrapper">
-                <img
-                  src="/Client/images/classes-6.jpg"
-                  alt="Nhận biết con vật"
-                  class="img-fluid w-100 favorite-image"
-                />
-              </div>
-
-              <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">Nhận Biết Con Vật</h5>
-                <p class="text-muted small mb-3">
-                  Học tên và tiếng kêu của các con vật.
-                </p>
-
-                <button class="btn btn-outline-primary rounded-pill px-4">
-                  Học Ngay
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
-            <div
-              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
-            >
-              <div class="favorite-image-wrapper">
-                <img
-                  src="/Client/images/about-1.jpg"
-                  alt="Tập đếm số"
-                  class="img-fluid w-100 favorite-image"
-                />
-              </div>
-
-              <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">Tập Đếm Số</h5>
-                <p class="text-muted small mb-3">
-                  Làm quen với các con số từ 1 đến 10.
-                </p>
-
-                <button class="btn btn-outline-primary rounded-pill px-4">
-                  Học Ngay
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
-            <div
-              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
-            >
-              <div class="favorite-image-wrapper">
-                <img
-                  src="/Client/images/about-2.jpg"
-                  alt="Đồ vật quanh em"
-                  class="img-fluid w-100 favorite-image"
-                />
-              </div>
-
-              <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">Đồ Vật Quanh Em</h5>
-                <p class="text-muted small mb-3">
-                  Nhận biết các đồ vật quen thuộc hằng ngày.
-                </p>
-
-                <button class="btn btn-outline-primary rounded-pill px-4">
+                <button class="btn btn-outline-primary rounded-pill px-4" @click="$router.push(`/bai-hoc/${bh.id}`)">
                   Học Ngay
                 </button>
               </div>
@@ -629,7 +502,7 @@
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
-                    <i class="fa fa-microphone"></i>
+                    <i class="ml-1 fa fa-microphone"></i>
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
@@ -662,7 +535,7 @@
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
-                    <i class="fa fa-headphones"></i>
+                    <i class="ml-1 fa fa-headphones"></i>
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
@@ -695,7 +568,7 @@
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
-                    <i class="fa fa-microchip"></i>
+                    <i class="ml-1 fa fa-microchip"></i>
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
@@ -726,24 +599,27 @@
         </div>
 
         <div class="row g-4">
-          <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+          <div
+            v-for="(hs, idx) in hocSinhNoiBat"
+            :key="hs.id || idx"
+            class="col-lg-4 col-md-6 wow fadeInUp"
+            :data-wow-delay="`${0.1 + idx * 0.2}s`"
+          >
             <div class="classes-item">
               <div class="bg-light rounded-circle w-75 mx-auto p-3">
                 <img
                   class="img-fluid rounded-circle"
-                  src="/Client/images/classes-1.jpg"
-                  alt=""
+                  :src="anhHocSinh(hs, idx)"
+                  :alt="hs.ho_ten"
                 />
               </div>
 
               <div class="bg-light rounded p-4 pt-5 mt-n5">
                 <a class="d-block text-center h3 mt-3 mb-4" href="">
-                  Bé Minh Anh
+                  {{ hs.ho_ten }}
                 </a>
 
-                <div
-                  class="d-flex align-items-center justify-content-between mb-4"
-                >
+                <div class="d-flex align-items-center justify-content-between mb-4">
                   <div class="d-flex align-items-center">
                     <img
                       class="rounded-circle flex-shrink-0"
@@ -753,161 +629,27 @@
                     />
 
                     <div class="ms-3">
-                      <h6 class="text-primary mb-1">Cô Nguyễn Thảo</h6>
-                      <small>Phát âm rõ hơn sau 2 tuần luyện tập</small>
+                      <h6 class="text-primary mb-1">EchoKids</h6>
+                      <small>Học viên nổi bật tuần này</small>
                     </div>
                   </div>
 
                   <span class="bg-primary text-white rounded-pill py-2 px-3">
-                    95%
+                    {{ hs.diem_trung_binh }}/100
                   </span>
                 </div>
 
                 <div class="row g-1">
-                  <div class="col-4">
-                    <div class="border-top border-3 border-primary pt-2">
-                      <h6 class="text-primary mb-1">Streak:</h6>
-                      <small>12 Ngày</small>
-                    </div>
-                  </div>
-
-                  <div class="col-4">
+                  <div class="col-6">
                     <div class="border-top border-3 border-success pt-2">
-                      <h6 class="text-success mb-1">Bài Học:</h6>
-                      <small>15 Bài</small>
+                      <h6 class="text-success mb-1">Phiên luyện:</h6>
+                      <small>{{ hs.so_phien || 0 }} phiên</small>
                     </div>
                   </div>
-
-                  <div class="col-4">
+                  <div class="col-6">
                     <div class="border-top border-3 border-warning pt-2">
-                      <h6 class="text-warning mb-1">Điểm:</h6>
-                      <small>9.5/10</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
-            <div class="classes-item">
-              <div class="bg-light rounded-circle w-75 mx-auto p-3">
-                <img
-                  class="img-fluid rounded-circle"
-                  src="/Client/images/classes-2.jpg"
-                  alt=""
-                />
-              </div>
-
-              <div class="bg-light rounded p-4 pt-5 mt-n5">
-                <a class="d-block text-center h3 mt-3 mb-4" href="">
-                  Bé Gia Hân
-                </a>
-
-                <div
-                  class="d-flex align-items-center justify-content-between mb-4"
-                >
-                  <div class="d-flex align-items-center">
-                    <img
-                      class="rounded-circle flex-shrink-0"
-                      src="/Client/images/user.jpg"
-                      alt=""
-                      style="width: 45px; height: 45px"
-                    />
-
-                    <div class="ms-3">
-                      <h6 class="text-primary mb-1">Thầy Minh Quân</h6>
-                      <small>Hoàn thành tốt khóa luyện âm cơ bản</small>
-                    </div>
-                  </div>
-
-                  <span class="bg-primary text-white rounded-pill py-2 px-3">
-                    98%
-                  </span>
-                </div>
-
-                <div class="row g-1">
-                  <div class="col-4">
-                    <div class="border-top border-3 border-primary pt-2">
-                      <h6 class="text-primary mb-1">Streak:</h6>
-                      <small>20 Ngày</small>
-                    </div>
-                  </div>
-
-                  <div class="col-4">
-                    <div class="border-top border-3 border-success pt-2">
-                      <h6 class="text-success mb-1">Bài Học:</h6>
-                      <small>24 Bài</small>
-                    </div>
-                  </div>
-
-                  <div class="col-4">
-                    <div class="border-top border-3 border-warning pt-2">
-                      <h6 class="text-warning mb-1">Điểm:</h6>
-                      <small>9.8/10</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
-            <div class="classes-item">
-              <div class="bg-light rounded-circle w-75 mx-auto p-3">
-                <img
-                  class="img-fluid rounded-circle"
-                  src="/Client/images/classes-3.jpg"
-                  alt=""
-                />
-              </div>
-
-              <div class="bg-light rounded p-4 pt-5 mt-n5">
-                <a class="d-block text-center h3 mt-3 mb-4" href="">
-                  Bé Quốc Bảo
-                </a>
-
-                <div
-                  class="d-flex align-items-center justify-content-between mb-4"
-                >
-                  <div class="d-flex align-items-center">
-                    <img
-                      class="rounded-circle flex-shrink-0"
-                      src="/Client/images/user.jpg"
-                      alt=""
-                      style="width: 45px; height: 45px"
-                    />
-
-                    <div class="ms-3">
-                      <h6 class="text-primary mb-1">Cô Thu Hà</h6>
-                      <small>Đã cải thiện rõ lỗi phát âm âm “s” và “x”</small>
-                    </div>
-                  </div>
-
-                  <span class="bg-primary text-white rounded-pill py-2 px-3">
-                    90%
-                  </span>
-                </div>
-
-                <div class="row g-1">
-                  <div class="col-4">
-                    <div class="border-top border-3 border-primary pt-2">
-                      <h6 class="text-primary mb-1">Streak:</h6>
-                      <small>10 Ngày</small>
-                    </div>
-                  </div>
-
-                  <div class="col-4">
-                    <div class="border-top border-3 border-success pt-2">
-                      <h6 class="text-success mb-1">Bài Học:</h6>
-                      <small>12 Bài</small>
-                    </div>
-                  </div>
-
-                  <div class="col-4">
-                    <div class="border-top border-3 border-warning pt-2">
-                      <h6 class="text-warning mb-1">Điểm:</h6>
-                      <small>9.0/10</small>
+                      <h6 class="text-warning mb-1">Điểm TB:</h6>
+                      <small>{{ hs.diem_trung_binh || 0 }}/100</small>
                     </div>
                   </div>
                 </div>
@@ -921,13 +663,28 @@
   </div>
 </template>
 <script>
+import axios from "axios";
+
 export default {
   name: "HomePage",
-
+  data() {
+    return {
+      apiBase: (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, ""),
+      chuDeNoiBat: [],
+      baiHocNoiBat: [],
+      hocSinhNoiBat: [],
+    };
+  },
   mounted() {
+    this.taiDuLieuTrangChu();
     this.initCarousel();
   },
-
+  beforeUnmount() {
+    const $carousel = $(".header-carousel");
+    if ($carousel.length && $carousel.hasClass("owl-loaded")) {
+      $carousel.trigger("destroy.owl.carousel");
+    }
+  },
   watch: {
     $route() {
       this.$nextTick(() => {
@@ -935,56 +692,87 @@ export default {
       });
     },
   },
-
   methods: {
-  beforeUnmount() {
-  const $carousel = $(".header-carousel");
-
-  if ($carousel.length && $carousel.hasClass("owl-loaded")) {
-    $carousel.trigger("destroy.owl.carousel");
-  }
-},
-initCarousel() {
-  this.$nextTick(() => {
-    const $carousel = $(".header-carousel");
-
-    if (window.$ && $carousel.length) {
-      // destroy carousel cũ
-      if ($carousel.hasClass("owl-loaded")) {
-        $carousel.trigger("destroy.owl.carousel");
-
-        $carousel.removeClass("owl-loaded owl-hidden");
-        $carousel.find(".owl-stage-outer").children().unwrap();
-        $carousel.find(".owl-stage").children().unwrap();
-        $carousel.find(".owl-item").children().unwrap();
-
-        $carousel.find(".owl-stage-outer").remove();
-        $carousel.find(".owl-nav").remove();
-        $carousel.find(".owl-dots").remove();
+    taiDuLieuTrangChu() {
+      axios
+        .get(this.apiBase + "/api/trang-chu")
+        .then((res) => {
+          const d = res.data?.data || {};
+          this.chuDeNoiBat = d.chu_de_noi_bat || [];
+          this.baiHocNoiBat = d.bai_hoc_noi_bat || [];
+          this.hocSinhNoiBat = d.hoc_sinh_noi_bat || [];
+        })
+        .catch(() => {
+          this.chuDeNoiBat = [];
+          this.baiHocNoiBat = [];
+          this.hocSinhNoiBat = [];
+        });
+    },
+    anhChuDe(idx) {
+      const imgs = [
+        "/Client/images/classes-1.jpg",
+        "/Client/images/classes-2.jpg",
+        "/Client/images/classes-3.jpg",
+        "/Client/images/classes-4.jpg",
+      ];
+      return imgs[idx % imgs.length];
+    },
+    anhBaiHoc(idx) {
+      const imgs = [
+        "/Client/images/classes-5.jpg",
+        "/Client/images/classes-6.jpg",
+        "/Client/images/about-1.jpg",
+        "/Client/images/about-2.jpg",
+      ];
+      return imgs[idx % imgs.length];
+    },
+    anhHocSinh(hs, idx) {
+      if (hs?.anh_dai_dien) {
+        if (String(hs.anh_dai_dien).startsWith("http")) return hs.anh_dai_dien;
+        return `${this.apiBase}/storage/${String(hs.anh_dai_dien).replace(/^\/+/, "")}`;
       }
-
-      // khởi tạo lại
-      $carousel.owlCarousel({
-        autoplay: true,
-        autoplayTimeout: 5000,
-        smartSpeed: 1200,
-        items: 1,
-        loop: true,
-        dots: true,
-        nav: true,
-        margin: 0,
-        navText: [
-          '<i class="bi bi-chevron-left"></i>',
-          '<i class="bi bi-chevron-right"></i>',
-        ],
+      const imgs = [
+        "/Client/images/classes-1.jpg",
+        "/Client/images/classes-2.jpg",
+        "/Client/images/classes-3.jpg",
+      ];
+      return imgs[idx % imgs.length];
+    },
+    initCarousel() {
+      this.$nextTick(() => {
+        const $carousel = $(".header-carousel");
+        if (window.$ && $carousel.length) {
+          if ($carousel.hasClass("owl-loaded")) {
+            $carousel.trigger("destroy.owl.carousel");
+            $carousel.removeClass("owl-loaded owl-hidden");
+            $carousel.find(".owl-stage-outer").children().unwrap();
+            $carousel.find(".owl-stage").children().unwrap();
+            $carousel.find(".owl-item").children().unwrap();
+            $carousel.find(".owl-stage-outer").remove();
+            $carousel.find(".owl-nav").remove();
+            $carousel.find(".owl-dots").remove();
+          }
+          $carousel.owlCarousel({
+            autoplay: true,
+            autoplayTimeout: 5000,
+            smartSpeed: 1200,
+            items: 1,
+            loop: true,
+            dots: true,
+            nav: true,
+            margin: 0,
+            navText: [
+              '<i class="bi bi-chevron-left"></i>',
+              '<i class="bi bi-chevron-right"></i>',
+            ],
+          });
+        }
       });
-    }
-  });
-},
+    },
   },
 };
 </script>
-<style>
+<style scoped>
 .carousel-full {
   width: 100vw;
   margin-left: calc(-50vw + 50%);
@@ -996,6 +784,28 @@ initCarousel() {
   padding-left: 60px;
   padding-right: 60px;
 }
+
+.team-text h3 {
+  font-size: 20px;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+
+.team-text p {
+  font-size: 13px;
+  line-height: 1.50;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 1200px) {
+  .team-text h3 {
+    font-size: 1.55rem;
+  }
+  .team-text p {
+    font-size: 0.95rem;
+  }
+}
+
 @media (max-width: 991px) {
   .page-section {
     padding-left: 20px;

@@ -17,6 +17,7 @@ use App\Http\Controllers\TeacherQuanLyBaiHocController;
 use App\Http\Controllers\TeacherTuVungController;
 use App\Http\Controllers\ThongTinHocVienController;
 use App\Http\Controllers\TtsController;
+use App\Http\Controllers\TrangChuController;
 use App\Http\Controllers\VaiTroController;
 use App\Http\Controllers\VaiTroQuyenController;
 use Illuminate\Http\Request;
@@ -188,11 +189,17 @@ Route::prefix('/danh-muc-bai-hoc')->group(function () {
     Route::get('/', [DanhMucBaiHocController::class, 'indexPublic']);
 });
 
+// Alias theo tài liệu trangchu.md
+Route::get('/chu-de', [DanhMucBaiHocController::class, 'indexPublic']);
+
 Route::prefix('/bai-hoc')->group(function () {
 
     Route::get('/', [BaiHocController::class, 'indexPublic']);
     Route::get('/{baiHoc}', [BaiHocController::class, 'showPublic']);
 });
+
+// Dữ liệu tổng hợp cho Trang Chủ
+Route::get('/trang-chu', [TrangChuController::class, 'index']);
 
 Route::prefix('/tts-vi')->group(function () {
 

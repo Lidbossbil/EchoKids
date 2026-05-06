@@ -4,16 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\GuiGoiYQuanHeGvHvRequest;
 use App\Models\BaiHoc;
+use App\Models\ChatMessage;
+use App\Models\ChatSession;
 use App\Models\ChiTietLuyenTap;
 use App\Models\GoiYLuyenTap;
 use App\Models\NguoiDung;
 use App\Models\PhienLuyenTap;
 use App\Models\QuanHeGvHv;
+use App\Models\ThongBao;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class QuanHeGvHvController extends Controller
@@ -209,8 +213,11 @@ class QuanHeGvHvController extends Controller
 
     public function danhSachBaiHocGoiY(Request $request): JsonResponse
     {
+        $giaoVien = $request->user();
         $baiHocs = BaiHoc::query()
             ->with(['danhMuc:id,ten_danh_muc'])
+            ->where('nguoi_tao_id', $giaoVien->id)
+            ->where('trang_thai', 1)
             ->orderBy('danh_muc_id')
             ->orderBy('thu_tu')
             ->orderByDesc('id')
@@ -245,12 +252,16 @@ class QuanHeGvHvController extends Controller
             ], 403);
         }
 
-        $baiHoc = BaiHoc::query()->find($request->bai_hoc_id);
+        $baiHoc = BaiHoc::query()
+            ->where('id', (int) $request->bai_hoc_id)
+            ->where('nguoi_tao_id', $giaoVien->id)
+            ->where('trang_thai', 1)
+            ->first();
         if (! $baiHoc) {
             return response()->json([
                 'status' => false,
-                'message' => 'Không tìm thấy bài học.',
-            ], 404);
+                'message' => 'Bài học không hợp lệ hoặc bạn không có quyền gợi ý bài này.',
+            ], 403);
         }
 
         $payload = [
@@ -262,12 +273,53 @@ class QuanHeGvHvController extends Controller
             'ngay_gui' => now()->toIso8601String(),
         ];
 
-        GoiYLuyenTap::query()->create([
-            'giao_vien_id' => $giaoVien->id,
-            'hoc_vien_id' => (int) $request->hoc_vien_id,
-            'noi_dung' => json_encode($payload, JSON_UNESCAPED_UNICODE),
-            'da_doc' => 0,
-        ]);
+        DB::transaction(function () use ($giaoVien, $request, $baiHoc, $payload): void {
+            GoiYLuyenTap::query()->create([
+                'giao_vien_id' => $giaoVien->id,
+                'hoc_vien_id' => (int) $request->hoc_vien_id,
+                'noi_dung' => json_encode($payload, JSON_UNESCAPED_UNICODE),
+                'da_doc' => 0,
+            ]);
+
+            $session = $this->timHoacTaoSessionChatGiaoVienHocVien(
+                (int) $giaoVien->id,
+                (int) $request->hoc_vien_id,
+                (int) $baiHoc->id
+            );
+
+            $noiDungTinNhan = $this->taoNoiDungTinNhanGoiY(
+                (int) $baiHoc->id,
+                (string) $baiHoc->tieu_de,
+                (string) $request->uu_tien,
+                $request->loi_nhan
+            );
+
+            $chatPayload = [
+                'session_id' => (int) $session->id,
+                'role' => 'teacher',
+                'content' => $noiDungTinNhan,
+                'is_read_by_teacher' => true,
+                'created_at' => now(),
+            ];
+            if (Schema::hasColumn('chat_messages', 'is_delivered_to_student')) {
+                $chatPayload['is_delivered_to_student'] = false;
+            }
+            if (Schema::hasColumn('chat_messages', 'is_read_by_student')) {
+                $chatPayload['is_read_by_student'] = false;
+            }
+
+            ChatMessage::query()->create($chatPayload);
+            $session->touch();
+
+            ThongBao::query()->create([
+                'nguoi_nhan_id' => (int) $request->hoc_vien_id,
+                'tieu_de' => 'Bạn có bài học được giáo viên gợi ý',
+                'noi_dung' => 'Giáo viên vừa gợi ý bài "'.$baiHoc->tieu_de.'". Hãy mở Chat Box để xem chi tiết.',
+                'loai' => 'goi_y_bai_hoc',
+                'duong_dan' => '/chat-box',
+                'da_doc' => 0,
+            ]);
+        });
 
         return response()->json([
             'status' => true,
@@ -281,6 +333,43 @@ class QuanHeGvHvController extends Controller
             ->where('giao_vien_id', $giaoVienId)
             ->where('hoc_vien_id', $hocVienId)
             ->exists();
+    }
+
+    private function taoNoiDungTinNhanGoiY(int $baiHocId, string $tieuDeBaiHoc, string $uuTien, ?string $loiNhan): string
+    {
+        $nhanUuTien = $uuTien === 'cao' ? 'Ưu tiên cao' : 'Bình thường';
+        $parts = [
+            'Giáo viên gợi ý bài: '.$tieuDeBaiHoc.'.',
+            'Mức độ ưu tiên: '.$nhanUuTien.'.',
+        ];
+
+        $loiNhan = trim((string) $loiNhan);
+        if ($loiNhan !== '') {
+            $parts[] = 'Lời nhắn từ giáo viên: '.$loiNhan;
+        }
+
+        return implode(' ', $parts).' [[lesson_id:'.$baiHocId.']]';
+    }
+
+    private function timHoacTaoSessionChatGiaoVienHocVien(int $giaoVienId, int $hocVienId, int $baiHocId): ChatSession
+    {
+        $session = ChatSession::query()
+            ->select('chat_sessions.*')
+            ->join('bai_hocs', 'bai_hocs.id', '=', 'chat_sessions.lesson_id')
+            ->where('chat_sessions.user_id', $hocVienId)
+            ->where('bai_hocs.nguoi_tao_id', $giaoVienId)
+            ->orderByDesc('chat_sessions.updated_at')
+            ->first();
+
+        if ($session) {
+            return $session;
+        }
+
+        return ChatSession::query()->create([
+            'user_id' => $hocVienId,
+            'lesson_id' => $baiHocId,
+            'status' => 'active',
+        ]);
     }
 
     /**
@@ -598,7 +687,7 @@ class QuanHeGvHvController extends Controller
         for ($i = 5; $i >= 0; $i--) {
             $start = now()->startOfMonth()->subMonths($i);
             $end = (clone $start)->endOfMonth();
-            $labels[] = 'Tháng '.$start->month;
+            $labels[] = $start->format('m/Y');
             $data[] = (int) PhienLuyenTap::query()
                 ->whereIn('nguoi_dung_id', $hocVienIds)
                 ->where(function ($q) use ($start, $end): void {
