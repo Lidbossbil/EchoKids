@@ -114,11 +114,14 @@ class ChatController extends Controller
         $messages = ChatMessage::where('session_id', $sessionId)
             ->orderBy('created_at', 'asc')
             ->get()
-            ->map(function ($msg) use ($studentName) {
+            ->map(function ($msg) use ($studentName, $session) {
+                $parsed = $this->parseSuggestionMessage((string) $msg->content, (int) ($session->lesson_id ?? 0));
                 return [
                     'id' => $msg->id,
                     'sender' => $msg->role === 'teacher' ? 'Giáo viên' : $studentName,
-                    'text' => $msg->content,
+                    'text' => $parsed['text'],
+                    'action_url' => $parsed['url'],
+                    'action_label' => $parsed['label'],
                     'time' => ChatDisplayTime::format($msg->created_at),
                     'status' => $msg->role === 'user'
                         ? ($msg->is_read_by_teacher ? 'seen' : (($msg->is_delivered_to_teacher ?? false) ? 'delivered' : 'sent'))
@@ -135,6 +138,29 @@ class ChatController extends Controller
             ],
             'messages' => $messages,
         ]);
+    }
+
+    /**
+     * @return array{text:string,url:?string,label:?string}
+     */
+    private function parseSuggestionMessage(string $content, int $fallbackLessonId): array
+    {
+        $cleanText = trim($content);
+        $lessonId = $fallbackLessonId;
+        if (preg_match('/\[\[lesson_id:(\d+)\]\]/', $content, $matches) === 1) {
+            $lessonId = (int) $matches[1];
+            $cleanText = trim(str_replace($matches[0], '', $content));
+        }
+
+        if ($lessonId <= 0 || ! str_starts_with($cleanText, 'Giáo viên gợi ý bài:')) {
+            return ['text' => $cleanText, 'url' => null, 'label' => null];
+        }
+
+        return [
+            'text' => $cleanText,
+            'url' => '/chi-tiet-bai-hoc/'.$lessonId,
+            'label' => null,
+        ];
     }
 
     public function sendMessage(Request $request, $sessionId)

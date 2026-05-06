@@ -63,11 +63,11 @@
           <div v-for="chat in filteredChats" :key="chat.id" @click="selectChat(chat)"
             class="d-flex align-items-center p-3 border-bottom cursor-pointer chat-item-hover messenger-row"
             style="cursor: pointer; transition: background-color 0.2s;">
-            <img v-if="chat.avatar" :src="chat.avatar" class="rounded-circle me-3"
+            <img v-if="chat.avatar" :src="chat.avatar" class="rounded-circle me-3 messenger-list-avatar"
               style="width: 50px; height: 50px; object-fit: cover;" />
             <div
               v-else
-              class="rounded-circle me-3 d-flex align-items-center justify-content-center"
+              class="rounded-circle me-3 d-flex align-items-center justify-content-center messenger-list-avatar"
               :class="{ 'brand-avatar-wrap': chat.type === 'ai' }"
               style="width: 50px; height: 50px; background-color: #f0f0f0;"
             >
@@ -83,7 +83,7 @@
                 <small v-if="chat.type === 'teacher'" class="text-muted flex-shrink-0 ms-2">{{ formatTime(chat.lastMessageTime) }}</small>
               </div>
               <p class="mb-0 text-muted small" style="max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                {{ chat.lastMessage }}
+                {{ truncateText(chat.lastMessage, 56) }}
               </p>
             </div>
 
@@ -152,8 +152,15 @@
                 <i class="fa fa-user"></i>
               </div>
               <div class="px-3 py-2 shadow-sm text-dark peer-message-bubble"
+                :class="{ 'clickable-message': !!msg.action_url }"
+                @click="msg.action_url ? navigateToAction(msg.action_url) : null"
                 style="font-size: 0.95rem; line-height: 1.4; border-radius: 18px 18px 18px 0; background-color: #ffffff; border: 1px solid #ffe0d9;">
                 {{ msg.text }}
+                <div v-if="msg.action_url" class="mt-1">
+                  <a href="#" class="action-link-emphasis" @click.stop.prevent="navigateToAction(msg.action_url)">
+                    Click vào đây
+                  </a>
+                </div>
               </div>
             </div>
               <small v-if="msg.time" class="message-time">{{ msg.time }}</small>
@@ -175,8 +182,15 @@
 
             <div v-else class="d-flex flex-column align-items-end user-message-wrap">
               <div class="px-3 py-2 shadow-sm text-white user-message-bubble"
+                :class="{ 'clickable-message': !!msg.action_url }"
+                @click="msg.action_url ? navigateToAction(msg.action_url) : null"
                 style="font-size: 0.95rem; line-height: 1.4; border-radius: 18px 18px 0 18px; background: linear-gradient(135deg, #ff8c6b, #fe5d37);">
                 {{ msg.text }}
+                <div v-if="msg.action_url" class="mt-1">
+                  <a href="#" class="action-link-emphasis action-link-emphasis-on-primary" @click.stop.prevent="navigateToAction(msg.action_url)">
+                    Click vào đây
+                  </a>
+                </div>
               </div>
               <small v-if="selectedChat?.type === 'teacher'" class="message-status mt-1">
                 <i :class="getMessageStatusIcon(msg.status)"></i>
@@ -197,6 +211,23 @@
 
         <!-- Message Input -->
         <div class="card-footer p-3 bg-white border-top">
+          <div
+            v-if="selectedChat?.type === 'ai' && !isTyping"
+            class="ai-suggest-wrap mb-3"
+          >
+            <small class="text-muted d-block mb-2 fw-semibold">Gợi ý nhanh cho bạn:</small>
+            <div class="d-flex flex-wrap gap-2">
+              <button
+                v-for="(q, idx) in goiYCauHoiAi"
+                :key="`${q}-${idx}`"
+                type="button"
+                class="btn btn-sm ai-suggest-chip"
+                @click="hoiCauGoiY(q)"
+              >
+                {{ q }}
+              </button>
+            </div>
+          </div>
           <div class="input-group align-items-center">
 
             <input ref="messageInputField" type="text" v-model="userInput" @keyup.enter="sendMessage()" :disabled="isTyping"
@@ -301,6 +332,12 @@ export default {
       speechSupported: false,
       activeLessonContext: null,
       activeLessonTeacherChat: null,
+      goiYCauHoiAi: [
+        'Gợi ý cho mình một bài học phù hợp hôm nay',
+        'Mình nên luyện phát âm âm nào trước?',
+        'Hãy đưa ra 3 mẹo luyện nói rõ ràng hơn',
+        'Tóm tắt lộ trình luyện tập trong 7 ngày',
+      ],
       branding: {
         logo_icon: "fa fa-book-reader",
       },
@@ -445,6 +482,10 @@ export default {
         hour: '2-digit',
         minute: '2-digit',
       });
+    },
+    truncateText(text, max = 40) {
+      const value = String(text || '').trim();
+      return value.length > max ? `${value.slice(0, max)}...` : value;
     },
     getSessionStorageKey() {
       return this.isTeacherMode ? 'chat_session_id_teacher' : 'chat_session_id_student';
@@ -808,7 +849,13 @@ export default {
       });
     },
     navigateToAction(url) {
+      if (!url) return;
       this.$router.push(url);
+    },
+    hoiCauGoiY(question) {
+      if (!question || this.isTyping) return;
+      this.userInput = question;
+      this.sendMessage('suggestion');
     },
     async ensureChatHistoryLoaded() {
       if (this.hasLoadedHistory || !this.selectedChat) return;
@@ -868,6 +915,8 @@ export default {
             ? (item.sender === 'Giáo viên' ? 'user' : 'teacher')
             : (item.sender === 'Giáo viên' ? 'teacher' : 'user'),
           text: item.text || '',
+          action_url: item.action_url || null,
+          action_label: item.action_label || null,
           status: item.status || null,
           time: this.formatMessageTime(item.time || item.created_at),
         }));
@@ -1193,13 +1242,13 @@ body.is-resizing-global {
 }
 
 .chat-item-hover:hover {
-  background-color: #f5f5f5;
+  background-color: #fff5f2;
 }
 
 .chat-list-header,
 .chat-detail-header {
-  background: #ffffff;
-  border-bottom: 1px solid #e9ecef !important;
+  background: linear-gradient(135deg, #fffaf8 0%, #fff2ee 100%);
+  border-bottom: 1px solid #ffd8cc !important;
 }
 
 .chat-title {
@@ -1254,6 +1303,11 @@ body.is-resizing-global {
 
 .messenger-row {
   background: #ffffff;
+  min-width: 0;
+}
+
+.messenger-list-avatar {
+  flex-shrink: 0;
 }
 
 .messenger-row-name {
@@ -1300,6 +1354,8 @@ body.is-resizing-global {
   min-width: 120px;
   white-space: pre-wrap;
   word-break: break-word;
+  border-color: #ffd9cf !important;
+  background: #fffefe !important;
 }
 
 .user-message-wrap {
@@ -1311,6 +1367,51 @@ body.is-resizing-global {
   max-width: 100%;
   white-space: pre-wrap;
   word-break: break-word;
+  background: linear-gradient(135deg, #ff8a65, #ff5d37) !important;
+}
+.clickable-message {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.clickable-message:hover {
+  transform: translateY(-1px);
+  border-color: #f59e0b !important;
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.2) !important;
+}
+.action-link-emphasis {
+  color: #dc2626;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.action-link-emphasis:hover {
+  color: #b91c1c;
+}
+.action-link-emphasis-on-primary {
+  color: #fee2e2;
+}
+.action-link-emphasis-on-primary:hover {
+  color: #fecaca;
+}
+
+.ai-suggest-wrap {
+  border: 1px solid #ffe1d7;
+  border-radius: 12px;
+  padding: 10px;
+  background: linear-gradient(180deg, #fffaf8, #fff);
+}
+
+.ai-suggest-chip {
+  border-radius: 999px;
+  border: 1px solid #ffd1c3;
+  background: #fff;
+  color: #c2410c;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.ai-suggest-chip:hover {
+  background: #ffefe9;
+  border-color: #ffb9a5;
 }
 
 .resize-handle {
