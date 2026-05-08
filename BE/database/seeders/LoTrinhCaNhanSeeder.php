@@ -8,64 +8,26 @@ use Illuminate\Support\Facades\DB;
 
 class LoTrinhCaNhanSeeder extends Seeder
 {
-    /**
-     * Khởi tạo lộ trình cá nhân hóa cho từng học viên.
-     */
     public function run(): void
     {
-        $gv1 = DB::table('nguoi_dungs')->where('email', 'maiphuong.gv@gmail.com')->first();
-        $gv2 = DB::table('nguoi_dungs')->where('email', 'thuylinh.gv@gmail.com')->first();
-
-        if (! $gv1) {
-            return;
+        $now = Carbon::now();
+        $data = [];
+        // Gán thêm lộ trình mặc định cho TOÀN BỘ học viên từ 4-10
+        foreach (range(4, 10) as $id) {
+            $data[] = [
+                'hoc_vien_id'  => $id,
+                'giao_vien_id' => 2,
+                'ten_lo_trinh' => 'Lộ trình cơ bản',
+                'ngay_tao'     => $now,
+                'created_at'   => $now,
+                'updated_at'   => $now,
+            ];
         }
-
-        $cacLoTrinh = [
-            [
-                'hv_email' => 'giabao.student@gmail.com',
-                'giao_vien_id' => $gv1->id,
-                'ten' => 'Lộ trình: Khắc phục lỗi L/N và chuẩn hóa dấu thanh',
-                'ngay' => Carbon::parse('2026-04-01'),
-            ],
-            [
-                'hv_email' => 'minhan.hv@gmail.com',
-                'giao_vien_id' => ($gv2 ?? $gv1)->id,
-                'ten' => 'Luyện phát âm chuẩn phụ âm quặt lưỡi S/X và TR/CH',
-                'ngay' => Carbon::parse('2026-03-15'),
-            ],
-            [
-                'hv_email' => 'thaovy.kid@outlook.com',
-                'giao_vien_id' => $gv1->id,
-                'ten' => 'Giao tiếp tự tin: Từ vựng đời sống và câu đơn lịch sự',
-                'ngay' => Carbon::parse('2026-04-05'),
-            ],
-            [
-                'hv_email' => 'hoanglong.phuong@gmail.com',
-                'giao_vien_id' => ($gv2 ?? $gv1)->id,
-                'ten' => 'Khởi động hơi và luyện phát âm nguyên âm mở miệng',
-                'ngay' => Carbon::parse('2026-04-10'),
-            ],
+        $ca_nhan = [
+            ['hoc_vien_id' => 4, 'giao_vien_id' => 2, 'ten_lo_trinh' => 'Lộ trình đồ dùng cơ bản', 'ngay_tao' => $now, 'created_at' => $now, 'updated_at' => $now],
+            ['hoc_vien_id' => 5, 'giao_vien_id' => 3, 'ten_lo_trinh' => 'Lộ trình Phát âm nâng cao', 'ngay_tao' => $now, 'created_at' => $now, 'updated_at' => $now],
         ];
-
-        foreach ($cacLoTrinh as $lt) {
-            $hv = DB::table('nguoi_dungs')->where('email', $lt['hv_email'])->first();
-
-            if (! $hv) {
-                continue;
-            }
-
-            DB::table('lo_trinh_ca_nhans')->updateOrInsert(
-                [
-                    'giao_vien_id' => $lt['giao_vien_id'],
-                    'hoc_vien_id' => $hv->id,
-                    'ten_lo_trinh' => $lt['ten'],
-                ],
-                [
-                    'ngay_tao' => $lt['ngay']->toDateString(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
-        }
+        $data = array_merge($data, $ca_nhan);
+        DB::table('lo_trinh_ca_nhans')->insert($data);
     }
 }

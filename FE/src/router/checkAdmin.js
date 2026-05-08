@@ -17,6 +17,11 @@ export default function (to, from, next) {
     .then((response) => {
       if (response.data.status && response.data.vai_tro_id === 1) {
         const d = response.data;
+        if (d.id != null && d.id !== "") {
+          localStorage.setItem("nguoi_dung_id", String(d.id));
+        } else {
+          localStorage.removeItem("nguoi_dung_id");
+        }
         localStorage.setItem("ho_ten", d.ho_ten ?? "");
         localStorage.setItem("email", d.email ?? "");
         localStorage.setItem("check_token", String(d.status));
@@ -36,8 +41,16 @@ export default function (to, from, next) {
         next("/dang-nhap");
       }
     })
-    .catch(() => {
-      toaster.error("Phiên đăng nhập hết hạn hoặc lỗi xác thực!");
+    .catch((error) => {
+      if (error?.response?.status === 403) {
+        toaster.error(
+          error?.response?.data?.message ||
+            "Tài khoản của bạn đã vi phạm chính sách bảo mật của chúng tôi"
+        );
+      } else {
+        toaster.error("Phiên đăng nhập hết hạn hoặc lỗi xác thực!");
+      }
+      localStorage.removeItem("token_admin");
       next("/dang-nhap");
     });
 }

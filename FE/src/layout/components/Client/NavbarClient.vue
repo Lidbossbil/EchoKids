@@ -1,9 +1,10 @@
 <template>
   <div ref="navbarRoot" class="container-fluid d-flex flex-wrap align-items-center py-lg-0">
-  <!-- Logo -->
   <router-link to="/" class="navbar-brand d-flex align-items-center">
-    <h1 class="m-0 text-primary">
-      <i :class="branding.logo_icon"></i>{{ branding.site_name }}
+    <h1 class="m-0 text-primary d-flex align-items-center">
+      <img v-if="branding.logo_url" :src="branding.logo_url" alt="Logo" class="me-2" style="height: 48px; width: 48px; object-fit: cover; border-radius: 50%;">
+      <i v-else class="fa fa-book-reader me-3"></i>
+      {{ branding.site_name }}
     </h1>
   </router-link>
 
@@ -180,7 +181,7 @@
 <script>
 import axios from "axios";
 
-const PROFILE_LS_KEYS = ["ho_ten", "email", "check_token", "ten_vai_tro", "anh_dai_dien"];
+const PROFILE_LS_KEYS = ["ho_ten", "email", "check_token", "ten_vai_tro", "anh_dai_dien", "anh_dai_dien_url", "anh_dai_dien_local", "nguoi_dung_id"];
 
 export default {
 
@@ -191,6 +192,7 @@ export default {
       daDangNhap: false,
       branding: {
         logo_icon: "fa fa-book-reader me-3",
+        logo_url: null,
         site_name: "EchoKids",
       },
     };
@@ -226,13 +228,18 @@ export default {
   methods: {
     taiCauHinhChung() {
       axios
-        .get("http://127.0.0.1:8000/api/admin/cau-hinh/chung/data")
+        .get("http://127.0.0.1:8000/api/cau-hinh/footer/data")
         .then((res) => {
           if (res.data?.status && res.data?.data) {
             this.branding.logo_icon =
               res.data.data.logo_icon || this.branding.logo_icon;
             this.branding.site_name =
               res.data.data.site_name || this.branding.site_name;
+            if (res.data.data.logo_url) {
+              this.branding.logo_url = res.data.data.logo_url;
+            } else {
+              this.branding.logo_url = null;
+            }
           }
         })
         .catch(() => {});
@@ -241,22 +248,35 @@ export default {
       if (!raw) {
         return macDinh;
       }
-      if (raw.startsWith("http://") || raw.startsWith("https://")) {
-        return raw;
+      const source = String(raw).trim().replace(/\\/g, "/");
+      if (!source) {
+        return macDinh;
+      }
+      if (source.startsWith("http://") || source.startsWith("https://") || source.startsWith("blob:")) {
+        return source;
       }
       const base = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
-      return `${base}/storage/${String(raw).replace(/^\//, "")}`;
+      if (source.startsWith("/storage/")) {
+        return `${base}${source}`;
+      }
+      if (source.startsWith("storage/")) {
+        return `${base}/${source}`;
+      }
+      return `${base}/storage/${source.replace(/^\//, "")}`;
     },
     dongBoUserTuLocal() {
       const token = localStorage.getItem("token_nguoi_dung");
+      const rawAnhUrl = localStorage.getItem("anh_dai_dien_url");
+      const rawAnhLocal = localStorage.getItem("anh_dai_dien_local");
       const rawAnh = localStorage.getItem("anh_dai_dien");
       const daDangNhap = !!token;
-      const coAnhThat = !!(rawAnh && String(rawAnh).trim());
+      const avatarRaw = rawAnhUrl || rawAnhLocal || rawAnh;
+      const coAnhThat = !!(avatarRaw && String(avatarRaw).trim());
       this.daDangNhap = daDangNhap;
       this.user = {
         name: localStorage.getItem("ho_ten") || (daDangNhap ? "Bạn học" : "Khách"),
         avatarDisplayUrl:
-          daDangNhap && coAnhThat ? this.duongDanAnh(rawAnh) : null,
+          daDangNhap && coAnhThat ? this.duongDanAnh(avatarRaw) : null,
       };
     },
     dangXuat() {
@@ -278,7 +298,7 @@ export default {
             PROFILE_LS_KEYS.forEach((k) => localStorage.removeItem(k));
             this.$toast.success(res.data.message);
             this.dongBoUserTuLocal();
-            this.$router.push("/dang-nhap");
+            this.$router.push("/");
           } else {
             this.$toast.error("Có lỗi xảy ra");
           }
@@ -287,7 +307,7 @@ export default {
           localStorage.removeItem("token_nguoi_dung");
           PROFILE_LS_KEYS.forEach((k) => localStorage.removeItem(k));
           this.dongBoUserTuLocal();
-          this.$router.push("/dang-nhap");
+          this.$router.push("/");
         });
     },
     handleClickOutside(event) {
@@ -324,22 +344,7 @@ export default {
   transform: scale(1.05);
 }
 
-.navbar-brand i {
-  background: linear-gradient(135deg, #ff6b35, #ff8c42);
-  color: #fff;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 25px rgba(255, 107, 53, 0.25);
-  transition: all 0.3s ease;
-}
 
-.navbar-brand:hover i {
-  transform: rotate(-8deg) scale(1.08);
-}
 
 .navbar-nav {
   gap: 8px;

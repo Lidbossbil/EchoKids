@@ -3,23 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\DestroyDanhMucBaiHocRequest;
+use App\Http\Requests\DestroyTeacherBaiHocRequest;
 use App\Http\Requests\GetBaiHocTheoDanhMucRequest;
 use App\Http\Requests\StoreDanhMucBaiHocRequest;
 use App\Http\Requests\StoreTeacherBaiHocRequest;
-use App\Http\Requests\DestroyTeacherBaiHocRequest;
 use App\Http\Requests\UpdateDanhMucBaiHocRequest;
 use App\Http\Requests\UpdateTeacherBaiHocRequest;
 use App\Models\BaiHoc;
 use App\Models\DanhMucBaiHoc;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Events\GiaoVienNopBaiHoc;
 
 class TeacherQuanLyBaiHocController extends Controller
 {
-    public function indexDanhMuc(): JsonResponse
+    public function indexDanhMuc(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $timKiem = trim((string) $request->query('tim_kiem', ''));
+        $chiCoBai = filter_var($request->query('chi_co_bai', false), FILTER_VALIDATE_BOOLEAN);
+
         $data = DanhMucBaiHoc::query()
-            ->withCount('baiHocs')
+            ->withCount([
+                'baiHocs' => function ($query) use ($user): void {
+                    $query->where('nguoi_tao_id', $user->id);
+                },
+            ])
             ->orderBy('thu_tu')
             ->orderByDesc('id')
             ->get()
@@ -32,6 +42,27 @@ class TeacherQuanLyBaiHocController extends Controller
                     'so_bai' => (int) $dm->bai_hocs_count,
                 ];
             });
+        if ($timKiem !== '') {
+            $keyword = mb_strtolower($timKiem);
+            $data = $data->filter(function (array $item) use ($keyword): bool {
+                return str_contains(mb_strtolower((string) $item['ten']), $keyword);
+            })->values();
+        }
+        if ($chiCoBai) {
+            $data = $data->filter(fn (array $item): bool => (int) $item['so_bai'] > 0)->values();
+        }
+        $data = $data->sort(function (array $a, array $b): int {
+            $aKhongCoBai = (int) $a['so_bai'] === 0;
+            $bKhongCoBai = (int) $b['so_bai'] === 0;
+            if ($aKhongCoBai !== $bKhongCoBai) {
+                return $aKhongCoBai <=> $bKhongCoBai;
+            }
+            if ((int) $a['so_bai'] !== (int) $b['so_bai']) {
+                return (int) $b['so_bai'] <=> (int) $a['so_bai'];
+            }
+
+            return strcmp(mb_strtolower((string) $a['ten']), mb_strtolower((string) $b['ten']));
+        })->values();
 
         return response()->json([
             'status' => true,
@@ -65,8 +96,9 @@ class TeacherQuanLyBaiHocController extends Controller
 
     public function indexBaiHocTheoDanhMuc(GetBaiHocTheoDanhMucRequest $request, int $id): JsonResponse
     {
+        $user = $request->user();
         $danhMuc = DanhMucBaiHoc::find($id);
-        if (!$danhMuc) {
+        if (! $danhMuc) {
             return response()->json([
                 'status' => false,
                 'message' => 'Không tìm thấy danh mục',
@@ -75,6 +107,7 @@ class TeacherQuanLyBaiHocController extends Controller
 
         $data = BaiHoc::with('tuVungs:id,bai_hoc_id')
             ->where('danh_muc_id', $id)
+            ->where('nguoi_tao_id', $user->id)
             ->orderBy('thu_tu')
             ->orderByDesc('id')
             ->get()
@@ -86,8 +119,7 @@ class TeacherQuanLyBaiHocController extends Controller
                     'mo_ta' => $baiHoc->mo_ta,
                     'cap_do' => $baiHoc->cap_do,
                     'so_luong_tu' => $baiHoc->tuVungs->count(),
-                    'trang_thai' => $this->mapTrangThaiBaiHocToTeacherUi($baiHoc->trang_thai),
-                    'trang_thai_so' => (int) $baiHoc->trang_thai,
+                    'trang_thai' => (int) $baiHoc->trang_thai,
                 ];
             });
 
@@ -119,12 +151,12 @@ class TeacherQuanLyBaiHocController extends Controller
                 'mo_ta' => $request->mo_ta,
                 'cap_do' => $request->cap_do,
                 'thu_tu' => $thuTu,
-                // Giáo viên chỉ có thể gửi bài ở trạng thái chờ duyệt.
-                'trang_thai' => 0,
+                'trang_thai' => (int) $request->input('trang_thai', 0),
             ]);
         });
 
         $baiHoc->load('tuVungs:id,bai_hoc_id');
+        broadcast(new GiaoVienNopBaiHoc($baiHoc, $request->user()->ho_ten ?? 'Giáo viên'));
 
         return response()->json([
             'status' => true,
@@ -136,8 +168,7 @@ class TeacherQuanLyBaiHocController extends Controller
                 'mo_ta' => $baiHoc->mo_ta,
                 'cap_do' => $baiHoc->cap_do,
                 'so_luong_tu' => $baiHoc->tuVungs->count(),
-                'trang_thai' => $this->mapTrangThaiBaiHocToTeacherUi($baiHoc->trang_thai),
-                'trang_thai_so' => (int) $baiHoc->trang_thai,
+                'trang_thai' => (int) $baiHoc->trang_thai,
             ],
         ], 201);
     }
@@ -145,7 +176,7 @@ class TeacherQuanLyBaiHocController extends Controller
     public function updateBaiHoc(UpdateTeacherBaiHocRequest $request, int $id): JsonResponse
     {
         $baiHoc = BaiHoc::find($id);
-        if (!$baiHoc) {
+        if (! $baiHoc) {
             return response()->json([
                 'status' => false,
                 'message' => 'Không tìm thấy bài học',
@@ -197,6 +228,7 @@ class TeacherQuanLyBaiHocController extends Controller
         });
 
         $baiHoc->load('tuVungs:id,bai_hoc_id');
+        broadcast(new GiaoVienNopBaiHoc($baiHoc, $request->user()->ho_ten ?? 'Giáo viên'));
 
         return response()->json([
             'status' => true,
@@ -208,8 +240,7 @@ class TeacherQuanLyBaiHocController extends Controller
                 'mo_ta' => $baiHoc->mo_ta,
                 'cap_do' => $baiHoc->cap_do,
                 'so_luong_tu' => $baiHoc->tuVungs->count(),
-                'trang_thai' => $this->mapTrangThaiBaiHocToTeacherUi($baiHoc->trang_thai),
-                'trang_thai_so' => (int) $baiHoc->trang_thai,
+                'trang_thai' => (int) $baiHoc->trang_thai,
             ],
         ]);
     }
@@ -217,7 +248,7 @@ class TeacherQuanLyBaiHocController extends Controller
     public function destroyBaiHoc(DestroyTeacherBaiHocRequest $request, int $id): JsonResponse
     {
         $baiHoc = BaiHoc::find($id);
-        if (!$baiHoc) {
+        if (! $baiHoc) {
             return response()->json([
                 'status' => false,
                 'message' => 'Không tìm thấy bài học',
@@ -239,7 +270,7 @@ class TeacherQuanLyBaiHocController extends Controller
         }
 
         $decoded = json_decode($moTa, true);
-        if (is_array($decoded) && !empty($decoded['icon']) && is_string($decoded['icon'])) {
+        if (is_array($decoded) && ! empty($decoded['icon']) && is_string($decoded['icon'])) {
             return $decoded['icon'];
         }
 
@@ -247,13 +278,8 @@ class TeacherQuanLyBaiHocController extends Controller
     }
 
     /**
-     * Giáo viên: 1 = hiển thị/đã duyệt (Hoạt động), 0 = nháp/chờ duyệt, 2 = từ chối (vẫn coi là nháp trên UI đơn giản).
+     * Giáo viên: 1 = Đã duyệt, 0 = Đợi duyệt (mặc định khi tạo mới).
      */
-    private function mapTrangThaiBaiHocToTeacherUi(?int $trangThai): string
-    {
-        return (int) $trangThai === 1 ? 'hoat_dong' : 'nhap';
-    }
-
     private function nextThuTuTrongDanhMuc(int $danhMucId): int
     {
         $max = BaiHoc::where('danh_muc_id', $danhMucId)->max('thu_tu');

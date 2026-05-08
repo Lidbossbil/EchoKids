@@ -29,47 +29,107 @@
   
         <!-- Bộ lọc -->
         <div class="bg-white rounded-5 shadow-sm p-4 mb-5">
-          <div class="row g-3">
-            <div class="col-lg-4">
-              <input
-                type="text"
-                class="form-control rounded-pill border-0 bg-light py-3 px-4"
-                placeholder="Tìm bài học..."
-              />
+          <div class="row g-3 align-items-center">
+            <!-- Thanh tìm kiếm -->
+            <div class="col-lg-5">
+              <div class="position-relative">
+                <i
+                  class="bi bi-search position-absolute top-50 translate-middle-y ms-3"
+                  style="color: #adb5bd; font-size: 16px; left: 4px;"
+                ></i>
+                <input
+                  type="text"
+                  class="form-control rounded-pill border-0 bg-light py-3 ps-5 pe-4"
+                  placeholder="Tìm bài học, chủ đề..."
+                  v-model="tuKhoa"
+                />
+              </div>
             </div>
-  
-            <div class="col-lg-8">
-              <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+
+            <!-- Lọc cấp độ -->
+            <div class="col-lg-7">
+              <div class="d-flex flex-wrap gap-2 justify-content-lg-end align-items-center">
+                <span class="text-muted small me-1">Cấp độ:</span>
+                <button
+                  v-for="cd in danhSachCapDo"
+                  :key="cd.value"
+                  type="button"
+                  class="btn rounded-pill px-3 py-2"
+                  :class="capDoChon === cd.value ? cd.classActive : cd.classOutline"
+                  @click="chonCapDo(cd.value)"
+                >
+                  {{ cd.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lọc chủ đề -->
+          <div class="row mt-3">
+            <div class="col-12">
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="text-muted small me-1">Chủ đề:</span>
                 <button
                   type="button"
-                  class="btn btn-primary rounded-pill px-4"
-                  @click="xemTatCaBaiHoc"
+                  class="btn rounded-pill px-4"
+                  :class="danhMucChon === null ? 'btn-primary' : 'btn-outline-primary'"
+                  @click="chonDanhMuc(null)"
                 >
                   Tất Cả
                 </button>
-  
-                <button class="btn btn-outline-warning rounded-pill px-4">
-                  Bảng Chữ Cái
+                <button
+                  v-for="(dm, idx) in danhSachChuDe"
+                  :key="dm.id"
+                  type="button"
+                  class="btn rounded-pill px-4"
+                  :class="danhMucChon === dm.id
+                    ? TOPIC_BTN_ACTIVE[idx % TOPIC_BTN_ACTIVE.length]
+                    : TOPIC_BTN_OUTLINE[idx % TOPIC_BTN_OUTLINE.length]"
+                  @click="chonDanhMuc(dm.id)"
+                >
+                  {{ dm.ten_danh_muc }}
                 </button>
-  
-                <button class="btn btn-outline-success rounded-pill px-4">
-                  Động Vật
+              </div>
+            </div>
+          </div>
+
+          <!-- Kết quả tìm kiếm -->
+          <div v-if="tuKhoa || danhMucChon || capDoChon" class="row mt-3">
+            <div class="col-12">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <small class="text-muted">Đang lọc:</small>
+                <span v-if="tuKhoa" class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                  <i class="bi bi-search me-1"></i>{{ tuKhoa }}
+                  <button type="button" class="btn-close ms-2" style="font-size:10px;" @click="tuKhoa = ''"></button>
+                </span>
+                <span v-if="danhMucChon" class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                  <i class="bi bi-bookmark me-1"></i>{{ tenDanhMucChon }}
+                  <button type="button" class="btn-close ms-2" style="font-size:10px;" @click="chonDanhMuc(null)"></button>
+                </span>
+                <span v-if="capDoChon" class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                  <i class="bi bi-bar-chart me-1"></i>{{ tenCapDoChon }}
+                  <button type="button" class="btn-close ms-2" style="font-size:10px;" @click="chonCapDo('')"></button>
+                </span>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                  @click="xoaBoLoc"
+                >
+                  Xóa tất cả
                 </button>
-  
-                <button class="btn btn-outline-danger rounded-pill px-4">
-                  Trái Cây
-                </button>
-  
-                <button class="btn btn-outline-info rounded-pill px-4">
-                  Màu Sắc
-                </button>
-  
               </div>
             </div>
           </div>
         </div>
   
         <!-- Danh sách bài học -->
+        <div v-if="lessons.length === 0 && !dangTai" class="text-center py-5">
+          <div class="mb-3" style="font-size: 64px;">🔍</div>
+          <h5 class="fw-bold" style="color: #0d3b66;">Không tìm thấy bài học</h5>
+          <p class="text-muted">Thử thay đổi từ khóa hoặc bộ lọc để xem nhiều bài học hơn.</p>
+          <button class="btn btn-primary rounded-pill px-4" @click="xoaBoLoc">Xem tất cả bài học</button>
+        </div>
+
         <div class="row g-4">
           <div
             class="col-xl-3 col-lg-4 col-md-6"
@@ -153,22 +213,27 @@
             </div>
           </div>
         </div>
-  <div class="text-center mt-5">
+  <div class="text-center mt-5" v-if="coThemBaiHoc || dangTaiThem">
     <p class="text-muted mb-3">
       Bé muốn khám phá thêm nhiều bài học thú vị hơn?
     </p>
-  
+
     <button
       class="btn rounded-pill px-5 py-3 fw-bold text-white shadow-sm"
-      style="
-        background: linear-gradient(135deg, #ff6b35, #ff8c42);
-        transition: all 0.3s ease;
-      "
-      onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(255, 107, 53, 0.25)'"
-      onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 0 0 rgba(0,0,0,0)'"
+      style="background: linear-gradient(135deg, #ff6b35, #ff8c42); transition: all 0.3s ease;"
+      :disabled="dangTaiThem"
+      @click="xemThem"
+      @mouseover="$event.currentTarget.style.transform='translateY(-4px)'"
+      @mouseout="$event.currentTarget.style.transform='translateY(0px)'"
     >
-      Xem Thêm Bài Học
-      <i class="bi bi-arrow-down-circle ms-2"></i>
+      <span v-if="dangTaiThem">
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        Đang tải...
+      </span>
+      <span v-else>
+        Xem Thêm Bài Học
+        <i class="bi bi-arrow-down-circle ms-2"></i>
+      </span>
     </button>
   </div>
         <!-- Banner -->
@@ -351,127 +416,281 @@
     </div>
   </template>
   
-  <script>
-  import axios from 'axios';
-  
-  const LESSON_STYLE_PRESETS = [
-      {
-          image:
-              'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=800&q=80',
-          icon: '🔤',
-          topicColor: '#ff6b35',
-          iconBg: '#fff1eb',
-      },
-      {
-          image:
-              'https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=800&q=80',
-          icon: '🐶',
-          topicColor: '#20c997',
-          iconBg: '#e8faf5',
-      },
-      {
-          image:
-              'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=800&q=80',
-          icon: '🍎',
-          topicColor: '#f4a100',
-          iconBg: '#fff8e6',
-      },
-      {
-          image:
-              'https://images.unsplash.com/photo-1494256997604-768d1f608cac?auto=format&fit=crop&w=800&q=80',
-          icon: '🎨',
-          topicColor: '#ff4d6d',
-          iconBg: '#ffeaf0',
-      },
-      {
-          image:
-              'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=800&q=80',
-          icon: '👨‍👩‍👧',
-          topicColor: '#6f42c1',
-          iconBg: '#f3ebff',
-      },
-      {
-          image:
-              'https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=800&q=80',
-          icon: '🚗',
-          topicColor: '#4d96ff',
-          iconBg: '#eaf3ff',
-      },
-  ];
-  
-  export default {
-      name: 'LessonPage',
-      data() {
-          return {
-              lessons: [],
-              chuDeTen: '',
-          };
-      },
-      mounted() {
-          this.fetchLessons();
-      },
-      watch: {
-          '$route.query.danh_muc_id'() {
-              this.fetchLessons();
-          },
-      },
-      methods: {
-          mapBaiHocToLesson(row, index) {
-              const style =
-                  LESSON_STYLE_PRESETS[index % LESSON_STYLE_PRESETS.length];
-              const dm = row.danh_muc;
-              return {
-                  id: row.id,
-                  title: row.tieu_de,
-                  description: row.mo_ta || '',
-                  image: style.image,
-                  topic: dm?.ten_danh_muc || 'Bài học',
-                  icon: style.icon,
-                  progress: 0,
-                  topicColor: style.topicColor,
-                  iconBg: style.iconBg,
-              };
-          },
-          xemTatCaBaiHoc() {
-              this.$router.push({ path: '/bai-hoc' });
-          },
-          vaoChiTietBaiHoc(id) {
-              this.$router.push({
-                  path: `/chi-tiet-bai-hoc/${id}`,
-                  query: this.$route.query,
-              });
-          },
-          fetchLessons() {
-              const id = this.$route.query.danh_muc_id;
-              const params = {};
-              if (
-                  id !== undefined &&
-                  id !== null &&
-                  String(id).trim() !== ''
-              ) {
-                  params.danh_muc_id = id;
-              }
-  
-              axios
-                  .get('http://127.0.0.1:8000/api/bai-hoc', { params })
-                  .then((res) => {
-                      const data = res.data;
-                      const rows = Array.isArray(data?.data) ? data.data : [];
-                      this.lessons = rows.map((row, i) =>
-                          this.mapBaiHocToLesson(row, i)
-                      );
-                      this.chuDeTen =
-                          data?.meta?.danh_muc?.ten_danh_muc || '';
-                  })
-                  .catch((err) => {
-                      console.error(err);
-                      this.lessons = [];
-                      this.chuDeTen = '';
-                  });
-          },
-      },
-  };
-  </script>
+<script>
+import axios from 'axios';
+
+const LESSON_STYLE_PRESETS = [
+    {
+        image: 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=800&q=80',
+        icon: '🔤',
+        topicColor: '#ff6b35',
+        iconBg: '#fff1eb',
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=800&q=80',
+        icon: '🐶',
+        topicColor: '#20c997',
+        iconBg: '#e8faf5',
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=800&q=80',
+        icon: '🍎',
+        topicColor: '#f4a100',
+        iconBg: '#fff8e6',
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1494256997604-768d1f608cac?auto=format&fit=crop&w=800&q=80',
+        icon: '🎨',
+        topicColor: '#ff4d6d',
+        iconBg: '#ffeaf0',
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=800&q=80',
+        icon: '👨‍👩‍👧',
+        topicColor: '#6f42c1',
+        iconBg: '#f3ebff',
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=800&q=80',
+        icon: '🚗',
+        topicColor: '#4d96ff',
+        iconBg: '#eaf3ff',
+    },
+];
+
+const TOPIC_BTN_OUTLINE = [
+    'btn-outline-warning',
+    'btn-outline-success',
+    'btn-outline-danger',
+    'btn-outline-info',
+    'btn-outline-secondary',
+];
+const TOPIC_BTN_ACTIVE = [
+    'btn-warning',
+    'btn-success',
+    'btn-danger',
+    'btn-info',
+    'btn-secondary',
+];
+
+export default {
+    name: 'LessonPage',
+    data() {
+        return {
+            lessons: [],
+            chuDeTen: '',
+            tuKhoa: '',
+            capDoChon: '',
+            danhMucChon: null,
+            danhSachChuDe: [],
+            dangTai: false,
+            dangTaiThem: false,
+            coThemBaiHoc: false,
+            trangHienTai: 1,
+            debounceTimer: null,
+            abortController: null,
+            TOPIC_BTN_OUTLINE,
+            TOPIC_BTN_ACTIVE,
+            danhSachCapDo: [
+                { value: '', label: 'Tất Cả', classOutline: 'btn-outline-primary', classActive: 'btn-primary' },
+                { value: 'basic', label: 'Cơ Bản', classOutline: 'btn-outline-success', classActive: 'btn-success' },
+                { value: 'intermediate', label: 'Trung Cấp', classOutline: 'btn-outline-warning', classActive: 'btn-warning text-white' },
+                { value: 'advanced', label: 'Nâng Cao', classOutline: 'btn-outline-danger', classActive: 'btn-danger' },
+            ],
+        };
+    },
+    computed: {
+        tenDanhMucChon() {
+            const dm = this.danhSachChuDe.find((d) => d.id === this.danhMucChon);
+            return dm?.ten_danh_muc || '';
+        },
+        tenCapDoChon() {
+            const cd = this.danhSachCapDo.find((c) => c.value === this.capDoChon);
+            return cd?.label || '';
+        },
+    },
+    mounted() {
+        const idFromRoute = this.$route.query.danh_muc_id;
+        if (idFromRoute) {
+            this.danhMucChon = Number(idFromRoute);
+        }
+        this.fetchDanhMuc();
+        this.fetchLessons(false);
+    },
+    beforeUnmount() {
+        clearTimeout(this.debounceTimer);
+        if (this.abortController) {
+            this.abortController.abort();
+        }
+    },
+    watch: {
+        '$route.query.danh_muc_id'(newVal) {
+            this.danhMucChon = newVal ? Number(newVal) : null;
+            this.fetchLessons(false);
+        },
+        tuKhoa() {
+            clearTimeout(this.debounceTimer);
+            this.debounceTimer = setTimeout(() => {
+                this.fetchLessons(false);
+            }, 400);
+        },
+    },
+    methods: {
+        authHeaders() {
+            const token = localStorage.getItem('token_nguoi_dung');
+            return token ? { Authorization: `Bearer ${token}` } : {};
+        },
+        mapBaiHocToLesson(row, globalIndex) {
+            const style = LESSON_STYLE_PRESETS[globalIndex % LESSON_STYLE_PRESETS.length];
+            const dm = row.danh_muc;
+            return {
+                id: row.id,
+                title: row.tieu_de,
+                description: row.mo_ta || '',
+                image: style.image,
+                topic: dm?.ten_danh_muc || 'Bài học',
+                icon: style.icon,
+                progress: 0,
+                topicColor: style.topicColor,
+                iconBg: style.iconBg,
+            };
+        },
+        async fetchLessonProgress() {
+            const token = localStorage.getItem('token_nguoi_dung');
+            if (!token || this.lessons.length === 0) {
+                this.lessons = this.lessons.map((lesson) => ({ ...lesson, progress: 0 }));
+                return;
+            }
+
+            try {
+                const { data: res } = await axios.get(
+                    'http://127.0.0.1:8000/api/tien-do-bai-hoc/tong-quan',
+                    {
+                        headers: this.authHeaders(),
+                        params: {
+                            bai_hoc_limit: 1000,
+                            bai_hoc_offset: 0,
+                        },
+                    }
+                );
+
+                const danhSachTienDo = Array.isArray(res?.data?.bai_hocs?.danh_sach)
+                    ? res.data.bai_hocs.danh_sach
+                    : [];
+
+                const progressMap = new Map(
+                    danhSachTienDo.map((item) => [
+                        Number(item.bai_hoc_id),
+                        Number(item.tien_do || 0),
+                    ])
+                );
+
+                this.lessons = this.lessons.map((lesson) => ({
+                    ...lesson,
+                    progress: progressMap.get(Number(lesson.id)) || 0,
+                }));
+            } catch (err) {
+                if (err.response?.status === 401) {
+                    this.lessons = this.lessons.map((lesson) => ({ ...lesson, progress: 0 }));
+                    return;
+                }
+                console.error(err);
+            }
+        },
+        chonDanhMuc(id) {
+            this.danhMucChon = id;
+            this.fetchLessons(false);
+        },
+        chonCapDo(value) {
+            this.capDoChon = value;
+            this.fetchLessons(false);
+        },
+        xoaBoLoc() {
+            this.tuKhoa = '';
+            this.capDoChon = '';
+            this.danhMucChon = null;
+            this.$router.push({ path: '/bai-hoc' });
+            this.fetchLessons(false);
+        },
+        xemTatCaBaiHoc() {
+            this.xoaBoLoc();
+        },
+        xemThem() {
+            if (!this.coThemBaiHoc || this.dangTaiThem) return;
+            this.fetchLessons(true);
+        },
+        vaoChiTietBaiHoc(id) {
+            this.$router.push({ path: `/chi-tiet-bai-hoc/${id}` });
+        },
+        fetchDanhMuc() {
+            axios
+                .get('http://127.0.0.1:8000/api/danh-muc-bai-hoc')
+                .then((res) => {
+                    this.danhSachChuDe = Array.isArray(res.data?.data) ? res.data.data : [];
+                })
+                .catch((err) => {
+                    console.error(err);
+                    this.danhSachChuDe = [];
+                });
+        },
+        fetchLessons(themVao) {
+            // Hủy request đang chạy nếu có
+            if (this.abortController) {
+                this.abortController.abort();
+            }
+            this.abortController = new AbortController();
+
+            if (themVao) {
+                this.trangHienTai += 1;
+                this.dangTaiThem = true;
+            } else {
+                this.trangHienTai = 1;
+                this.dangTai = true;
+            }
+
+            const params = { page: this.trangHienTai };
+            if (this.danhMucChon) params.danh_muc_id = this.danhMucChon;
+            if (this.tuKhoa.trim()) params.tim_kiem = this.tuKhoa.trim();
+            if (this.capDoChon) params.cap_do = this.capDoChon;
+
+            axios
+                .get('http://127.0.0.1:8000/api/bai-hoc', {
+                    params,
+                    signal: this.abortController.signal,
+                })
+                .then((res) => {
+                    const data = res.data;
+                    const rows = Array.isArray(data?.data) ? data.data : [];
+                    const startIndex = themVao ? this.lessons.length : 0;
+                    const mapped = rows.map((row, i) => this.mapBaiHocToLesson(row, startIndex + i));
+
+                    if (themVao) {
+                        this.lessons = [...this.lessons, ...mapped];
+                    } else {
+                        this.lessons = mapped;
+                    }
+
+                    this.coThemBaiHoc = data?.pagination?.con_trang_tiep ?? false;
+                    this.chuDeTen = data?.meta?.danh_muc?.ten_danh_muc || '';
+                    this.fetchLessonProgress();
+                })
+                .catch((err) => {
+                    if (err.code === 'ERR_CANCELED') return;
+                    console.error(err);
+                    if (!themVao) {
+                        this.lessons = [];
+                        this.chuDeTen = '';
+                    }
+                    this.coThemBaiHoc = false;
+                })
+                .finally(() => {
+                    this.dangTai = false;
+                    this.dangTaiThem = false;
+                });
+        },
+    },
+};
+</script>
   
   <style scoped>
   .start-btn {

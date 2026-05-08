@@ -18,20 +18,23 @@ class CauHinhHeThongSeeder extends Seeder
                 'logo_icon' => 'fa fa-book-reader me-3',
                 'site_name' => 'EchoKids',
                 'hotline' => '1900 1234',
-                'support_email' => 'hotro@echokids.vn',
+                'support_email' => 'supportechokids@gmail.com',
                 'facebook_url' => 'https://facebook.com/echokids',
             ],
             'ai' => [
                 'speech_to_text' => [
                     'is_active' => true,
-                    'api_key' => 'AIzaSyA_XXXXXXXXXXXXXXXXXXXXX_V8',
-                    'monthly_limit' => 50000,
-                    'current_usage' => 42150,
+                    'api_key' => '[GCP_API_KEY]',
+                    'monthly_limit' => 500000,
+                    'current_usage' => 0,
                 ],
             ],
             'alert' => [
                 'is_active' => false,
                 'message' => 'Hệ thống đang tiến hành nâng cấp AI. Việc chấm điểm phát âm có thể chậm hơn bình thường 1-2 giây.',
+            ],
+            'ti_le_hoa_hong_platform' => [
+                'phan_tram' => 20,
             ],
         ];
 

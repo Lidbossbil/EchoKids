@@ -3,50 +3,88 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class DanhMucSeeder extends Seeder
 {
-    /**
-     * Danh mục bài học — dữ liệu cố định, tái chạy an toàn (updateOrInsert theo tên).
-     */
     public function run(): void
     {
-        $danhmucs = [
+        $data = [
             [
-                'ten_danh_muc' => 'Luyện phát âm Âm tiết',
-                'mo_ta' => 'Nguyên âm — phụ âm đầu — cuối: L/N, S/X, TR/CH, dấu thanh. Phù hợp trẻ 4–8 tuổi.',
+                'id' => 1,
+                'ten_danh_muc' => 'Bảng Chữ Cái & Âm Cơ Bản',
+                'slug_danh_muc' => 'bang-chu-cai-am-co-ban',
+                'mo_ta' => 'Làm quen với nguyên âm, phụ âm, vần và thanh điệu tiếng Việt',
+                'trang_thai' => 0,
+                'thu_tu' => 1,
+                'created_at' => Carbon::now(),
             ],
             [
-                'ten_danh_muc' => 'Từ vựng theo Chủ đề',
-                'mo_ta' => 'Từ vựng quanh nhà, trường học, thiên nhiên qua hình ảnh minh họa rõ nét.',
+                'id' => 2,
+                'ten_danh_muc' => 'Gia Đình & Cơ Thể',
+                'slug_danh_muc' => 'gia-dinh-co-the',
+                'mo_ta' => 'Từ vựng về các thành viên gia đình và các bộ phận cơ thể người',
+                'trang_thai' => 0,
+                'thu_tu' => 2,
+                'created_at' => Carbon::now(),
             ],
             [
-                'ten_danh_muc' => 'Câu đơn giao tiếp',
-                'mo_ta' => 'Mẫu câu ngắn lịch sự: chào, cảm ơn, xin phép — đọc trôi chảy từng nhịp.',
+                'id' => 3,
+                'ten_danh_muc' => 'Thức Ăn & Đồ Uống',
+                'slug_danh_muc' => 'thuc-an-do-uong',
+                'mo_ta' => 'Từ vựng về trái cây, rau củ, món ăn và đồ uống hằng ngày',
+                'trang_thai' => 0,
+                'thu_tu' => 3,
+                'created_at' => Carbon::now(),
             ],
             [
-                'ten_danh_muc' => 'Kiểm tra định kỳ',
-                'mo_ta' => 'Ôn tập tổng hợp, đánh giá tiến độ sau mỗi giai đoạn.',
+                'id' => 4,
+                'ten_danh_muc' => 'Động Vật',
+                'slug_danh_muc' => 'dong-vat',
+                'mo_ta' => 'Từ vựng về các loài động vật quen thuộc và sinh vật thiên nhiên',
+                'trang_thai' => 0,
+                'thu_tu' => 4,
+                'created_at' => Carbon::now(),
             ],
             [
-                'ten_danh_muc' => 'Khởi động giọng nói',
-                'mo_ta' => 'Bài khởi động hô hấp — vần điệu nhẹ nhàng trước khi vào bài chính.',
+                'id' => 5,
+                'ten_danh_muc' => 'Thực Vật & Thiên Nhiên',
+                'slug_danh_muc' => 'thuc-vat-thien-nhien',
+                'mo_ta' => 'Từ vựng về hoa, cây cối, thiên nhiên và địa hình xung quanh',
+                'trang_thai' => 0,
+                'thu_tu' => 5,
+                'created_at' => Carbon::now(),
+            ],
+            [
+                'id' => 6,
+                'ten_danh_muc' => 'Trường Học',
+                'slug_danh_muc' => 'truong-hoc',
+                'mo_ta' => 'Từ vựng về đồ dùng học tập, màu sắc, hình dạng và hoạt động ở trường',
+                'trang_thai' => 0,
+                'thu_tu' => 6,
+                'created_at' => Carbon::now(),
+            ],
+            [
+                'id' => 7,
+                'ten_danh_muc' => 'Thế Giới Xung Quanh',
+                'slug_danh_muc' => 'the-gioi-xung-quanh',
+                'mo_ta' => 'Từ vựng về phương tiện, nghề nghiệp, nơi chốn và thời gian',
+                'trang_thai' => 0,
+                'thu_tu' => 7,
+                'created_at' => Carbon::now(),
+            ],
+            [
+                'id' => 8,
+                'ten_danh_muc' => 'Giao Tiếp Hằng Ngày',
+                'slug_danh_muc' => 'giao-tiep-hang-ngay',
+                'mo_ta' => 'Lời chào hỏi, biểu đạt nhu cầu và câu hỏi đơn giản trong sinh hoạt',
+                'trang_thai' => 0,
+                'thu_tu' => 8,
+                'created_at' => Carbon::now(),
             ],
         ];
 
-        foreach ($danhmucs as $index => $dm) {
-            DB::table('danh_muc_bai_hocs')->updateOrInsert(
-                ['ten_danh_muc' => $dm['ten_danh_muc']],
-                [
-                    'slug_danh_muc' => Str::slug($dm['ten_danh_muc']),
-                    'mo_ta' => $dm['mo_ta'],
-                    'trang_thai' => 0,
-                    'thu_tu' => $index + 1,
-                    'ngay_tao' => now(),
-                ]
-            );
-        }
+        DB::table('danh_muc_bai_hocs')->insert($data);
     }
 }

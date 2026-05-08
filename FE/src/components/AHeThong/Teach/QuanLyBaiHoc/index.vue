@@ -22,14 +22,26 @@
                         </h6>
                     </div>
                     <div class="card-body p-3">
+                        <div class="mb-3">
+                            <input v-model.trim="bo_loc_danh_muc.tim_kiem" type="text"
+                                class="form-control form-control-sm" placeholder="Tìm danh mục..."
+                                @input="locDanhMuc" />
+                            <div class="form-check mt-2 mb-0">
+                                <input id="chiCoDanhMucCoBai" class="form-check-input" type="checkbox"
+                                    v-model="bo_loc_danh_muc.chi_co_bai" @change="locDanhMuc">
+                                <label class="form-check-label small text-muted" for="chiCoDanhMucCoBai">
+                                    Chỉ hiển thị danh mục có bài học
+                                </label>
+                            </div>
+                        </div>
                         <div v-if="loadingDanhMuc" class="text-center py-4 text-muted">
                             <span class="spinner-border spinner-border-sm me-2"></span>Đang tải danh mục...
                         </div>
-                        <div v-else-if="danh_muc.length === 0" class="text-center py-4 text-muted">
-                            Chưa có danh mục. Nhấn <strong>+</strong> để tạo mới.
+                        <div v-else-if="danh_muc_hien_thi.length === 0" class="text-center py-4 text-muted">
+                            Không có danh mục phù hợp bộ lọc.
                         </div>
                         <div v-else class="list-group list-group-flush gap-2">
-                            <button v-for="dm in danh_muc" :key="dm.id"
+                            <button v-for="dm in danh_muc_hien_thi" :key="dm.id"
                                 class="list-group-item list-group-item-action border-0 rounded-3 d-flex justify-content-between align-items-center p-3 transition-all"
                                 :class="{
                                     'bg-primary text-white shadow-sm': danh_muc_dang_chon === dm.id,
@@ -58,7 +70,7 @@
                         class="card-header bg-white border-bottom-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
                         <h6 class="fw-bold mb-0">
                             <i class="fa-solid fa-book-open text-success me-2"></i>
-                            Bài học
+                            Danh Mục
                             <span v-if="tenDanhMucDangChon" class="text-muted fw-normal" style="font-size: 0.9rem;">
                                 - {{ tenDanhMucDangChon }}
                             </span>
@@ -160,24 +172,23 @@
                                                         </ul>
                                                     </div>
                                                 </div>
-
                                                 <p class="text-secondary small mb-3 text-truncate" :title="bai.mo_ta"
                                                     style="opacity: 0.85;">
                                                     {{ bai.mo_ta || 'Chưa có mô tả cho bài học này' }}
                                                 </p>
-
                                                 <div class="d-flex justify-content-between align-items-center mt-auto">
                                                     <span
-                                                        class="badge rounded-pill bg-light text-secondary border px-3 py-2 fw-medium">
+                                                        class="badge rounded-pill bg-light text-secondary me-1 border px-2 py-1 fw-medium"
+                                                        style="font-size: 0.8rem;">
                                                         <i class="fa-solid fa-layer-group me-1 opacity-75"></i> Cấp độ:
                                                         {{ formatCapDo(bai.cap_do) }}
                                                     </span>
-
                                                     <span
-                                                        class="badge rounded-pill px-3 py-2 fw-medium d-flex align-items-center gap-1 border"
-                                                        :style="styleTrangThaiBaiHoc(bai)">
-                                                        <i class="fa-solid" :class="iconTrangThaiBaiHoc(bai)"></i>
-                                                        {{ nhanTrangThaiBaiHoc(bai) }}
+                                                        class="badge rounded-pill px-2 py-1 fw-medium d-flex align-items-center gap-1 border"
+                                                        :style="bai.trang_thai == 1 ? 'font-size: 0.8rem; background-color: #dcfce7; color: #166534; border-color: #bbf7d0 !important;' : (bai.trang_thai == 2 ? 'font-size: 0.8rem; background-color: #fee2e2; color: #991b1b; border-color: #fecaca !important;' : 'font-size: 0.8rem; background-color: #f1f5f9; color: #475569; border-color: #e2e8f0 !important;')">
+                                                        <i class="fa-solid"
+                                                            :class="bai.trang_thai == 1 ? 'fa-circle-check' : (bai.trang_thai == 2 ? 'fa-circle-xmark' : 'fa-clock')"></i>
+                                                        {{ bai.trang_thai == 1 ? 'Đã duyệt' : (bai.trang_thai == 2 ? 'Từ chối' : 'Đợi duyệt') }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -227,7 +238,7 @@
                         </div>
 
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="form-label fw-medium">Cấp độ</label>
                                 <select class="form-select" v-model="formBaiHoc.cap_do">
                                     <option value="de">Dễ (Mầm non)</option>
@@ -235,17 +246,12 @@
                                     <option value="kho">Khó (Nâng cao)</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-medium">Trạng thái</label>
-                                <input type="text" class="form-control" value="Chờ duyệt"
-                                    disabled>
-                            </div>
                         </div>
                     </div>
                     <div class="modal-footer bg-light border-top-0">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
                         <button type="button" class="btn btn-primary" :disabled="savingBaiHoc" @click="luuBaiHoc">
-                            <span v-if="savingBaiHoc" class="spinner-border spinner-border-sm me-2"></span>Lưu dữ liệu
+                            <span v-if="savingBaiHoc" class="spinner-border spinner-border-sm me-2"></span>Xác Nhận
                         </button>
                     </div>
                 </div>
@@ -338,15 +344,29 @@ export default {
                 tieu_de: '',
                 mo_ta: '',
                 cap_do: 'de',
-                trang_thai: 'nhap',
             },
             isEditDanhMuc: false,
             formDanhMuc: { id: null, ten: '', icon: 'fa-solid fa-folder' },
             doiTuongXoa: null,
             loaiXoa: '',
+            bo_loc_danh_muc: {
+                tim_kiem: '',
+                chi_co_bai: false,
+            },
         };
     },
     computed: {
+        danh_muc_hien_thi() {
+            let list = [...this.danh_muc];
+            const kw = (this.bo_loc_danh_muc.tim_kiem || '').toLowerCase();
+            if (kw) {
+                list = list.filter((dm) => (dm.ten || '').toLowerCase().includes(kw));
+            }
+            if (this.bo_loc_danh_muc.chi_co_bai) {
+                list = list.filter((dm) => this.demSoBaiHoc(dm) > 0);
+            }
+            return list;
+        },
         bai_hoc_hien_thi() {
             if (!this.danh_muc_dang_chon) return [];
             return this.bai_hoc.filter((bai) => bai.danh_muc_id === this.danh_muc_dang_chon);
@@ -358,8 +378,19 @@ export default {
     },
     mounted() {
         this.taiDanhMuc();
+        window.addEventListener('bai-hoc-duoc-duyet', this.handleBaiHocDuyet);
+    },
+    beforeUnmount() {
+        window.removeEventListener('bai-hoc-duoc-duyet', this.handleBaiHocDuyet);
     },
     methods: {
+        handleBaiHocDuyet(e) {
+            const data = e.detail;
+            const baiHocIndex = this.bai_hoc.findIndex(b => b.id === data.bai_hoc_id);
+            if (baiHocIndex !== -1) {
+                this.bai_hoc[baiHocIndex].trang_thai = data.trang_thai;
+            }
+        },
         getAuthToken() {
             return localStorage.getItem('token_teacher') || '';
         },
@@ -403,8 +434,12 @@ export default {
         },
         taiDanhMuc(preferredDanhMucId = null) {
             this.loadingDanhMuc = true;
+            const params = {
+                tim_kiem: this.bo_loc_danh_muc.tim_kiem || undefined,
+                chi_co_bai: this.bo_loc_danh_muc.chi_co_bai ? 1 : undefined,
+            };
             axios
-                .get(this.apiBase + '/api/teacher/danh-muc-bai-hoc', { headers: this.authHeaders() })
+                .get(this.apiBase + '/api/teacher/danh-muc-bai-hoc', { headers: this.authHeaders(), params })
                 .then((res) => {
                     if (res.data.status) {
                         this.danh_muc = res.data.data || [];
@@ -478,6 +513,14 @@ export default {
             this.danh_muc_dang_chon = id;
             this.taiBaiHoc(id);
         },
+        locDanhMuc() {
+            const danhMucDangChonConHien = this.danh_muc_hien_thi.some((d) => d.id === this.danh_muc_dang_chon);
+            if (!danhMucDangChonConHien) {
+                this.danh_muc_dang_chon = this.danh_muc_hien_thi[0]?.id || null;
+                this.taiBaiHoc(this.danh_muc_dang_chon);
+            }
+            this.taiDanhMuc(this.danh_muc_dang_chon);
+        },
         demSoBaiHoc(dm) {
             if (dm && typeof dm.so_bai === 'number') return dm.so_bai;
             return this.bai_hoc.filter((bai) => bai.danh_muc_id === dm.id).length;
@@ -485,29 +528,6 @@ export default {
         formatCapDo(capDo) {
             const map = { de: 'Dễ', trung_binh: 'TB', kho: 'Khó' };
             return map[capDo] || 'Dễ';
-        },
-        nhanTrangThaiBaiHoc(bai) {
-            const trangThaiSo = Number(bai.trang_thai_so);
-            if (trangThaiSo === 2) return 'Từ chối';
-            return bai.trang_thai === 'hoat_dong' ? 'Đã duyệt' : 'Chờ duyệt';
-        },
-        iconTrangThaiBaiHoc(bai) {
-            const trangThaiSo = Number(bai.trang_thai_so);
-            if (trangThaiSo === 2) return 'fa-circle-xmark';
-            return bai.trang_thai === 'hoat_dong' ? 'fa-circle-check' : 'fa-hourglass-half';
-        },
-        styleTrangThaiBaiHoc(bai) {
-            const trangThaiSo = Number(bai.trang_thai_so);
-            if (trangThaiSo === 2) {
-                return 'background-color: #fee2e2; color: #991b1b; border-color: #fecaca !important;';
-            }
-            return bai.trang_thai === 'hoat_dong'
-                ? 'background-color: #dcfce7; color: #166534; border-color: #bbf7d0 !important;'
-                : 'background-color: #fef3c7; color: #92400e; border-color: #fde68a !important;';
-        },
-        themDanhMuc() {
-            this.isEditDanhMuc = false;
-            this.formDanhMuc = { id: null, ten: '', icon: 'fa-solid fa-folder' };
         },
         suaDanhMuc(dm) {
             this.isEditDanhMuc = true;
@@ -555,7 +575,6 @@ export default {
                 tieu_de: '',
                 mo_ta: '',
                 cap_do: 'de',
-                trang_thai: 'nhap',
             };
         },
         suaBaiHoc(bai) {
@@ -566,7 +585,6 @@ export default {
                 tieu_de: bai.tieu_de || '',
                 mo_ta: bai.mo_ta || '',
                 cap_do: bai.cap_do || 'de',
-                trang_thai: bai.trang_thai === 'hoat_dong' ? 'hoat_dong' : 'nhap',
             };
         },
         luuBaiHoc() {

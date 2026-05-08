@@ -3,7 +3,7 @@
       <!-- Bảng chữ cái + luyện đọc -->
       <div class="row g-4 mt-5">
         <!-- Cột trái -->
-        <div class="col-lg-7">
+        <div ref="vocabularySection" class="col-lg-7">
           <div class="bg-white rounded-5 shadow-sm p-4 h-100">
             <div class="d-flex justify-content-between align-items-center mb-4">
               <div>
@@ -148,47 +148,136 @@
         Nghe mẫu
       </button>
 
-      <button class="btn btn-danger rounded-pill py-3 fw-bold text-white practice-btn">
+      <button
+        v-if="!isRecording && !isScoring"
+        type="button"
+        class="btn btn-danger rounded-pill py-3 fw-bold text-white practice-btn"
+        :disabled="!selectedLetter.id || !phien_id"
+        @click="startRecording"
+      >
         <i class="fa fa-microphone me-2"></i>
         Ghi Âm Kiểm Tra
+      </button>
+      <button
+        v-else-if="isRecording"
+        type="button"
+        class="btn btn-danger rounded-pill py-3 fw-bold text-white practice-btn recording-pulse"
+        @click="stopRecording"
+      >
+        <i class="fa fa-stop-circle me-2"></i>
+        Dừng Ghi Âm
+      </button>
+      <button
+        v-else
+        type="button"
+        class="btn btn-secondary rounded-pill py-3 fw-bold text-white practice-btn"
+        disabled
+      >
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        Đang chấm điểm...
       </button>
     </div>
 
     <div class="bg-light rounded-4 p-4 mb-4 position-relative" style="z-index: 2;">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="fw-bold">Điểm AI</span>
-        <span class="fw-bold" style="color: #20c997;">8.5 / 10</span>
+      <!-- Chưa có kết quả -->
+      <div v-if="!scoringResult && !isScoring" class="text-center text-muted py-2">
+        <i class="fa fa-microphone-slash fa-2x mb-2 d-block" style="color: #ccc;"></i>
+        <small>Nhấn "Ghi Âm Kiểm Tra" để AI chấm điểm phát âm của bé</small>
       </div>
 
-      <div
-        class="progress rounded-pill mb-3 ai-progress"
-        style="height: 10px;"
-      >
-        <div
-          class="progress-bar rounded-pill"
-          role="progressbar"
-          style="
-            width: 85%;
-            background: linear-gradient(135deg, #20c997, #4dd4ac);
-          "
-        ></div>
+      <!-- Đang chấm điểm -->
+      <div v-else-if="isScoring" class="text-center py-2">
+        <div class="spinner-border text-success mb-2" role="status"></div>
+        <p class="text-muted mb-0 small">Đang chấm điểm...</p>
       </div>
 
-      <div
-        class="rounded-4 p-3 ai-result-box"
-        style="background: #eefbf5;"
-      >
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <i class="fa fa-check-circle text-success"></i>
-          <p class="text-success fw-bold mb-0">
-            Gần Đúng
-          </p>
+      <!-- Có kết quả -->
+      <template v-else-if="scoringResult">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-bold">Điểm AI</span>
+          <span class="fw-bold" :style="{ color: scoreColor }">{{ scoringResult.diem }} / 100</span>
         </div>
 
-        <small class="text-muted">
-          Bé phát âm khá tốt, hãy đọc to và rõ hơn ở cuối âm.
-        </small>
-      </div>
+        <div class="progress rounded-pill mb-3 ai-progress" style="height: 10px;">
+          <div
+            class="progress-bar rounded-pill"
+            role="progressbar"
+            :style="{
+              width: scoringResult.diem + '%',
+              background: 'linear-gradient(135deg, ' + scoreColor + ', ' + scoreColor + 'aa)',
+            }"
+          ></div>
+        </div>
+
+        <!-- So sánh nhận diện -->
+        <div class="rounded-3 px-3 py-2 mb-3 small" style="background:#f8f9fa; border:1px solid #e9ecef;">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted">Từ chuẩn:</span>
+            <span class="fw-bold" style="color:#0d3b66;">{{ scoringResult.tu_chuan }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted">AI nghe thấy:</span>
+            <span
+              class="fw-bold"
+              :style="{ color: scoringResult.van_ban_nhan_dien === scoringResult.tu_chuan ? '#20c997' : '#dc3545' }"
+            >
+              {{ scoringResult.van_ban_nhan_dien || '(không nghe được)' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Nhãn lỗi -->
+        <div
+          v-if="scoringResult.loi_am_dau || scoringResult.loi_van || scoringResult.loi_thanh_dieu"
+          class="d-flex flex-wrap gap-2 mb-3"
+        >
+          <span v-if="scoringResult.loi_am_dau" class="badge bg-danger">Sai âm đầu</span>
+          <span v-if="scoringResult.loi_van" class="badge" style="background:#fd7e14;">Sai vần</span>
+          <span v-if="scoringResult.loi_thanh_dieu" class="badge bg-warning text-dark">Sai thanh điệu</span>
+        </div>
+        <div v-else class="d-flex flex-wrap gap-2 mb-3">
+          <span class="badge bg-success">Phát âm chuẩn</span>
+        </div>
+
+        <div
+          class="rounded-4 p-3 ai-result-box"
+          :style="{ background: scoringResult.diem >= 70 ? '#eefbf5' : '#fff3f3' }"
+        >
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i
+              :class="scoringResult.diem >= 70
+                ? 'fa fa-check-circle text-success'
+                : 'fa fa-times-circle text-danger'"
+            ></i>
+            <p
+              :class="scoringResult.diem >= 70 ? 'text-success fw-bold mb-0' : 'text-danger fw-bold mb-0'"
+            >
+              {{ feedbackTitle }}
+            </p>
+          </div>
+          <small class="text-muted">{{ feedbackText }}</small>
+        </div>
+
+        <!-- Nghe lại ghi âm -->
+        <button
+          v-if="recordingBlobUrl"
+          type="button"
+          class="btn btn-outline-secondary rounded-pill mt-3 w-100 fw-bold"
+          @click="playRecording"
+        >
+          <i class="fa fa-play-circle me-2"></i>
+          Nghe Lại Ghi Âm
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-outline-danger rounded-pill mt-2 w-100 fw-bold"
+          @click="retryRecording"
+        >
+          <i class="fa fa-redo me-2"></i>
+          Thử Lại
+        </button>
+      </template>
     </div>
 
     <button class="btn btn-primary rounded-pill py-3 fw-bold w-100 test-btn">
@@ -212,46 +301,16 @@ export default {
             lessonFetchDone: false,
             tuVungList: [],
             baiHocDetail: null,
+            phien_id: null,
 
-            selectedLetter: {
-                key: "a-A",
-                letter: "A",
-                word: "Na",
-                icon: "🍚",
-                image: null,
-            },
+            selectedLetter: {},
 
-            alphabetList: [
-                { letter: "A", word: "Na", icon: "🍚" },
-                { letter: "Ă", word: "Ăn", icon: "🍜" },
-                { letter: "Â", word: "Âm", icon: "🎵" },
-                { letter: "B", word: "Bò", icon: "🐄" },
-                { letter: "C", word: "Cá", icon: "🐟" },
-                { letter: "D", word: "Dê", icon: "🐐" },
-                { letter: "Đ", word: "Đèn", icon: "💡" },
-                { letter: "E", word: "Em", icon: "👧" },
-                { letter: "Ê", word: "Ếch", icon: "🐸" },
-                { letter: "G", word: "Gà", icon: "🐔" },
-                { letter: "H", word: "Hoa", icon: "🌸" },
-                { letter: "I", word: "In", icon: "🖨️" },
-                { letter: "K", word: "Kem", icon: "🍦" },
-                { letter: "L", word: "Lá", icon: "🍃" },
-                { letter: "M", word: "Mèo", icon: "🐱" },
-                { letter: "N", word: "Nai", icon: "🦌" },
-                { letter: "O", word: "Ong", icon: "🐝" },
-                { letter: "Ô", word: "Ô", icon: "☂️" },
-                { letter: "Ơ", word: "Ớt", icon: "🌶️" },
-                { letter: "P", word: "Phở", icon: "🍜" },
-                { letter: "Q", word: "Quả", icon: "🍎" },
-                { letter: "R", word: "Rổ", icon: "🧺" },
-                { letter: "S", word: "Sách", icon: "📚" },
-                { letter: "T", word: "Táo", icon: "🍎" },
-                { letter: "U", word: "Uống", icon: "🥤" },
-                { letter: "Ư", word: "Ước", icon: "⭐" },
-                { letter: "V", word: "Voi", icon: "🐘" },
-                { letter: "X", word: "Xe", icon: "🚗" },
-                { letter: "Y", word: "Yêu", icon: "❤️" },
-            ],
+            alphabetList: [],
+
+            isRecording: false,
+            isScoring: false,
+            scoringResult: null,
+            recordingBlobUrl: null,
         };
     },
 
@@ -275,8 +334,9 @@ export default {
             if (this.tuVungList.length > 0) {
                 return this.tuVungList.map((tv) => ({
                     key: `v-${tv.id}`,
+                    id: tv.id,
                     letter: tv.tu_chuan,
-                    word: tv.phien_am || tv.tu_chuan,
+                    word: tv.tu_chuan,
                     icon: "✨",
                     image: tv.hinh_anh_url || null,
                 }));
@@ -302,6 +362,29 @@ export default {
         isLongMainTitle() {
             return String(this.selectedLetter.letter || "").length > 10;
         },
+        scoreColor() {
+            if (!this.scoringResult) return '#20c997';
+            const d = this.scoringResult.diem;
+            if (d >= 80) return '#20c997';
+            if (d >= 60) return '#fd7e14';
+            return '#dc3545';
+        },
+        feedbackTitle() {
+            if (!this.scoringResult) return '';
+            const d = this.scoringResult.diem;
+            if (d >= 90) return 'Tuyệt vời!';
+            if (d >= 70) return 'Gần Đúng!';
+            if (d >= 50) return 'Cố lên nào!';
+            return 'Thử lại nhé!';
+        },
+        feedbackText() {
+            if (!this.scoringResult) return '';
+            const d = this.scoringResult.diem;
+            if (d >= 90) return 'Bé phát âm rất chuẩn rồi! Tuyệt vời!';
+            if (d >= 70) return 'Bé phát âm khá tốt, thử lại để đạt điểm cao hơn nhé!';
+            if (d >= 50) return 'Bé đọc thêm vài lần sẽ tiến bộ hơn thôi!';
+            return 'Bé hãy nghe mẫu trước rồi đọc theo thật chậm nhé!';
+        },
     },
 
     mounted() {
@@ -310,15 +393,55 @@ export default {
 
     watch: {
         "$route.params.id"() {
+            try { this.endSession(); } catch (e) {}
             this.lessonFetchDone = false;
             this.tuVungList = [];
             this.baiHocDetail = null;
             this.loadBaiHocTuVung();
         },
+        "$route.query.tu_vung_id"() {
+            this.$nextTick(() => {
+                this.applyTargetVocabulary();
+            });
+        },
+        selectedLetter() {
+            this.scoringResult = null;
+            if (this.recordingBlobUrl) {
+                URL.revokeObjectURL(this.recordingBlobUrl);
+                this.recordingBlobUrl = null;
+            }
+            if (this.isRecording) {
+                this.isRecording = false;
+                if (this._mediaRecorder && this._mediaRecorder.state !== 'inactive') {
+                    this._mediaRecorder.stop();
+                }
+                if (this._recordingTimer) {
+                    clearTimeout(this._recordingTimer);
+                    this._recordingTimer = null;
+                }
+            }
+        },
     },
 
     beforeUnmount() {
         this.stopTtsSample();
+        if (this._mediaRecorder && this._mediaRecorder.state !== 'inactive') {
+            this._mediaRecorder.stop();
+        }
+        if (this._recordingTimer) {
+            clearTimeout(this._recordingTimer);
+        }
+        if (this.recordingBlobUrl) {
+            URL.revokeObjectURL(this.recordingBlobUrl);
+        }
+        localStorage.removeItem("active_lesson_chat_context");
+        window.dispatchEvent(new CustomEvent("active-lesson-chat-updated"));
+    },
+
+    beforeRouteLeave(to, from, next) {
+        localStorage.removeItem("active_lesson_chat_context");
+        window.dispatchEvent(new CustomEvent("active-lesson-chat-updated"));
+        next();
     },
 
     methods: {
@@ -336,18 +459,33 @@ export default {
                     if (!d) {
                         this.tuVungList = [];
                         this.baiHocDetail = null;
+                        localStorage.removeItem("active_lesson_chat_context");
                     } else {
                         this.baiHocDetail = {
+                            id: d.id,
                             tieu_de: d.tieu_de,
                             mo_ta: d.mo_ta,
+                            nguoi_tao_id: d.nguoi_tao_id || d.giao_vien?.id || null,
+                            giao_vien: d.giao_vien || null,
                         };
                         this.tuVungList = Array.isArray(d.tu_vungs) ? d.tu_vungs : [];
+                        localStorage.setItem(
+                            "active_lesson_chat_context",
+                            JSON.stringify({
+                                lesson_id: d.id,
+                                lesson_title: d.tieu_de || "",
+                                teacher_id: d.nguoi_tao_id || d.giao_vien?.id || null,
+                                teacher_name: d.giao_vien?.ho_ten || "Giáo viên",
+                            })
+                        );
+                        window.dispatchEvent(new CustomEvent("active-lesson-chat-updated"));
                     }
                 })
                 .catch((e) => {
                     console.error(e);
                     this.tuVungList = [];
                     this.baiHocDetail = null;
+                    localStorage.removeItem("active_lesson_chat_context");
                 })
                 .finally(() => {
                     this.lessonFetchDone = true;
@@ -357,8 +495,33 @@ export default {
                         if (first) {
                             this.selectedLetter = { ...first };
                         }
+                        this.applyTargetVocabulary();
                     });
+
+                    // Tạo phiên luyện tập khi load bài xong
+                    this.startSession();
                 });
+        },
+
+        applyTargetVocabulary() {
+            const tuVungId = Number(this.$route.query.tu_vung_id || 0);
+            if (!tuVungId || this.practiceList.length === 0) {
+                return;
+            }
+
+            const matchedItem = this.practiceList.find((item) => Number(item.id || 0) === tuVungId);
+            if (!matchedItem) {
+                return;
+            }
+
+            this.selectedLetter = { ...matchedItem };
+
+            if (this.$route.query.section === "tu-vung" && this.$refs.vocabularySection) {
+                this.$refs.vocabularySection.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            }
         },
 
         stopTtsSample() {
@@ -371,6 +534,145 @@ export default {
                 URL.revokeObjectURL(this._ttsBlobUrl);
                 this._ttsBlobUrl = null;
             }
+        },
+
+        startSession() {
+            const id = this.$route.params.id;
+            if (!id) return;
+            if (this.phien_id) return; // đã có phiên
+            const token = localStorage.getItem("token_nguoi_dung");
+            if (!token) return; // chưa đăng nhập
+
+            axios.post('http://127.0.0.1:8000/api/phien-luyen-taps/start', { bai_hoc_id: id }, {
+                headers: {
+                    Authorization: 'Bearer ' + token
+                }
+            })
+            .then((res) => {
+                if (res.data.status) {
+                    this.phien_id = res.data.data.phien_id;
+                    localStorage.setItem('last_phien_id', String(this.phien_id));
+                }
+            })
+            .catch((e) => {
+                console.error('startSession error', e);
+            });
+        },
+
+        endSession() {
+            if (!this.phien_id) return;
+            const token = localStorage.getItem("token_nguoi_dung");
+            if (!token) { this.phien_id = null; return; }
+
+            axios.post('http://127.0.0.1:8000/api/phien-luyen-taps/end', { phien_id: this.phien_id }, {
+                headers: {
+                    Authorization: 'Bearer ' + token
+                }
+            })
+            .then(() => {
+                this.phien_id = null;
+            })
+            .catch((e) => {
+                console.error('endSession error', e);
+                this.phien_id = null;
+            });
+        },
+
+        async startRecording() {
+            if (!this.selectedLetter.id) {
+                alert('Vui lòng chọn một từ vựng để luyện tập!');
+                return;
+            }
+            if (!this.phien_id) {
+                alert('Chưa có phiên luyện tập. Vui lòng thử lại sau!');
+                return;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                this._audioChunks = [];
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+                this._mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+                this._mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) this._audioChunks.push(e.data);
+                };
+                this._mediaRecorder.onstop = () => {
+                    stream.getTracks().forEach((t) => t.stop());
+                    const blob = new Blob(this._audioChunks, {
+                        type: this._mediaRecorder.mimeType || 'audio/webm',
+                    });
+                    this.submitAudio(blob);
+                };
+                this._mediaRecorder.start();
+                this.isRecording = true;
+                this.scoringResult = null;
+                this._recordingTimer = setTimeout(() => {
+                    if (this.isRecording) this.stopRecording();
+                }, 10000);
+            } catch (e) {
+                console.error('startRecording error', e);
+                alert('Không thể truy cập microphone. Vui lòng kiểm tra quyền truy cập!');
+            }
+        },
+
+        stopRecording() {
+            if (this._recordingTimer) {
+                clearTimeout(this._recordingTimer);
+                this._recordingTimer = null;
+            }
+            if (this._mediaRecorder && this._mediaRecorder.state !== 'inactive') {
+                this._mediaRecorder.stop();
+            }
+            this.isRecording = false;
+            this.isScoring = true;
+        },
+
+        async submitAudio(blob) {
+            const token = localStorage.getItem('token_nguoi_dung');
+            if (!token || !this.phien_id || !this.selectedLetter.id) {
+                this.isScoring = false;
+                return;
+            }
+            if (this.recordingBlobUrl) {
+                URL.revokeObjectURL(this.recordingBlobUrl);
+            }
+            this.recordingBlobUrl = URL.createObjectURL(blob);
+            const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
+            const formData = new FormData();
+            formData.append('audio', blob, `recording.${ext}`);
+            formData.append('phien_id', this.phien_id);
+            formData.append('tu_vung_id', this.selectedLetter.id);
+            try {
+                const res = await axios.post(
+                    'http://127.0.0.1:8000/api/cham-diem-phat-am',
+                    formData,
+                    {
+                        headers: {
+                            Authorization: 'Bearer ' + token,
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    }
+                );
+                this.scoringResult = res.data;
+            } catch (e) {
+                console.error('submitAudio error', e);
+                alert('Có lỗi xảy ra khi chấm điểm. Vui lòng thử lại!');
+            } finally {
+                this.isScoring = false;
+            }
+        },
+
+        retryRecording() {
+            this.scoringResult = null;
+        },
+
+        playRecording() {
+            if (!this.recordingBlobUrl) return;
+            if (this._recordingAudio) {
+                this._recordingAudio.pause();
+                this._recordingAudio.currentTime = 0;
+            }
+            this._recordingAudio = new Audio(this.recordingBlobUrl);
+            this._recordingAudio.play();
         },
 
         playSampleTts() {
@@ -596,5 +898,15 @@ export default {
   from {
     width: 0;
   }
+}
+
+@keyframes recordingPulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(220, 53, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+.recording-pulse {
+  animation: recordingPulse 1.4s ease-in-out infinite;
 }
 </style>

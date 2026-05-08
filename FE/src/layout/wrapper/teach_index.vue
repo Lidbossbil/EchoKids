@@ -3,25 +3,16 @@
     <SidebarTeach />
     <TopNavbarTeach />
     <div class="content-page">
-      <div class="container-fluid">
-        <router-view />
+      <div class="mt-2">
+        <router-view :key="$route.fullPath" />
       </div>
     </div>
     <FooterTeach />
-    <nav class="iq-float-menu">
-      <input type="checkbox" href="#" class="iq-float-menu-open" name="menu-open" id="menu-open" />
-      <label class="iq-float-menu-open-button" for="menu-open">
-        <span class="lines line-1"></span>
-        <span class="lines line-2"></span>
-        <span class="lines line-3"></span>
-      </label>
-      <button class="iq-float-menu-item bg-info" data-toggle="tooltip" data-placement="top" title="Direction Mode"
-        data-mode="rtl"><i class="ri-text-direction-r"></i></button>
-      <button class="iq-float-menu-item bg-danger" data-toggle="tooltip" data-placement="top" title="Color Mode"
-        id="dark-mode" data-active="true"><i class="ri-sun-line"></i></button>
-      <button class="iq-float-menu-item bg-warning" data-toggle="tooltip" data-placement="top" title="Comming Soon"><i
-          class="ri-palette-line"></i></button>
-    </nav>
+    <ChatBox
+      v-if="$route.path !== '/teacher/chat-box'"
+      mode="teacher"
+      :floating="true"
+    />
   </div>
 </template>
 
@@ -29,6 +20,7 @@
 import SidebarTeach from '../components/Teach/SidebarTeach.vue'
 import TopNavbarTeach from '../components/Teach/TopNavbarTeach.vue'
 import FooterTeach from '../components/Teach/FooterTeach.vue'
+import ChatBox from '../../components/Client/ChatBox/index.vue'
 
 // ===== CORE =====
 import "../../../public/Admin/js/jquery.min.js";
@@ -75,13 +67,54 @@ export default {
   components: {
     SidebarTeach,
     TopNavbarTeach,
-    FooterTeach
+    FooterTeach,
+    ChatBox
   },
 
   mounted() {
     // fix jQuery global (quan trọng)
     window.$ = window.jQuery;
-  }
+    this.khoiTaoRealtime();
+  },
+
+  beforeUnmount() {
+    this.dongKenh();
+  },
+
+  methods: {
+    layGiaoVienId() {
+      // ID giáo viên lưu trong localStorage sau khi đăng nhập
+      return parseInt(localStorage.getItem('nguoi_dung_id') || '0', 10);
+    },
+
+    khoiTaoRealtime() {
+      if (!window.Echo) return;
+      const giaoVienId = this.layGiaoVienId();
+      if (!giaoVienId) return;
+
+      // Cập nhật auth header với token giáo viên hiện tại
+      const token = localStorage.getItem('token_teacher') || '';
+      if (token && window.Echo.connector?.pusher) {
+        window.Echo.connector.pusher.config.auth = {
+          headers: { Authorization: 'Bearer ' + token },
+        };
+      }
+
+      // Lắng nghe channel private 'teacher.{id}'
+      this._teacherChannel = window.Echo.private(`teacher.${giaoVienId}`);
+      this._teacherChannel.listen('.AdminDuyetBaiHoc', (data) => {
+        // Phát sự kiện nội bộ để trang quản lý bài học có thể tự reload
+        window.dispatchEvent(new CustomEvent('bai-hoc-duoc-duyet', { detail: data }));
+      });
+    },
+
+    dongKenh() {
+      const giaoVienId = this.layGiaoVienId();
+      if (window.Echo && giaoVienId) {
+        try { window.Echo.leave(`teacher.${giaoVienId}`); } catch (_) {}
+      }
+    },
+  },
 };
 </script>
 <style>
@@ -95,4 +128,47 @@ export default {
 /* ===== ICON ===== */
 @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css");
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css");
+
+.content-page {
+  margin-left: 260px !important;
+  padding: 59px 18px 0 !important;
+  transition: all 0.35s ease !important;
+}
+
+.iq-top-navbar {
+  border-bottom: 1px solid #e5e7eb !important;
+  transition: all 0.35s ease !important;
+}
+
+.iq-sidebar {
+  width: 260px !important;
+  transition: all 0.35s ease !important;
+}
+
+body.sidebar-main .iq-sidebar {
+  width: 80px !important;
+}
+
+body.sidebar-main .content-page {
+  margin-left: 80px !important;
+}
+
+body.sidebar-main .iq-top-navbar {
+  left: 95px !important;
+}
+
+body.sidebar-main .iq-sidebar .iq-sidebar-logo span,
+body.sidebar-main .iq-sidebar .iq-menu li a span {
+  display: none !important;
+}
+
+body.sidebar-main .iq-sidebar .iq-sidebar-logo a {
+  justify-content: center !important;
+}
+
+body.sidebar-main .iq-sidebar .iq-menu li a {
+  justify-content: center !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
 </style>

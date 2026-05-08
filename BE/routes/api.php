@@ -1,34 +1,70 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\BaiHocController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\CauHinhController;
+use App\Http\Controllers\ChatBoxAIController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DanhMucBaiHocController;
 use App\Http\Controllers\ErrorHistoryController;
+use App\Http\Controllers\HoSoGiaoVienController;
 use App\Http\Controllers\KiemDuyetBaiHocConTroller;
 use App\Http\Controllers\NguoiDungController;
+use App\Http\Controllers\PhienLuyenTapController;
 use App\Http\Controllers\QuanHeGvHvController;
 use App\Http\Controllers\TeacherQuanLyBaiHocController;
 use App\Http\Controllers\TeacherTuVungController;
+use App\Http\Controllers\ThongTinHocVienController;
+use App\Http\Controllers\ChiTietLuyenTapController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\TienDoBaiHocController;
 use App\Http\Controllers\TtsController;
+use App\Http\Controllers\TrangChuController;
 use App\Http\Controllers\VaiTroController;
 use App\Http\Controllers\VaiTroQuyenController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    // Student chat endpoints
+    Route::get('/student/chat/unread-count', [\App\Http\Controllers\StudentChatController::class, 'unreadCount']);
+    Route::get('/student/chat/sessions', [\App\Http\Controllers\StudentChatController::class, 'getSessions']);
+    Route::post('/student/chat/session', [\App\Http\Controllers\StudentChatController::class, 'createSession']);
+    Route::post('/student/chat/session/{sessionId}/send', [\App\Http\Controllers\StudentChatController::class, 'sendMessage']);
+    Route::get('/student/chat/session/{sessionId}/messages', [\App\Http\Controllers\StudentChatController::class, 'getMessages']);
+
+    // System AI chat endpoints
+    Route::post('/chat/system', [\App\Http\Controllers\ChatBoxAIController::class, 'chatSystem']);
+    Route::prefix('/chat/system')->group(function () {
+        Route::post('/session', [\App\Http\Controllers\ChatBoxAIController::class, 'session']);
+        Route::post('/chat', [\App\Http\Controllers\ChatBoxAIController::class, 'chatSystem']);
+        Route::get('/history', [\App\Http\Controllers\ChatBoxAIController::class, 'history']);
+    });
 });
 
-//---------------------------------------------ADMIN--------------------------------------------------------------
+// ---------------------------------------------ADMIN--------------------------------------------------------------
 
 Route::prefix('/admin')->group(function () {
+    Route::prefix('/dashboard')->middleware(['auth:sanctum'])->group(function () {
+        Route::get('/realtime', [AdminDashboardController::class, 'realtime']);
+        Route::get('/performance', [AdminDashboardController::class, 'performance']);
+        Route::get('/reports', [AdminDashboardController::class, 'reports']);
+        Route::get('/export', [AdminDashboardController::class, 'export']);
+    });
+
     Route::prefix('/quan-ly-tai-khoan')->group(function () {
         Route::post('/create', [AdminController::class, 'store']);
         Route::get('/data', [AdminController::class, 'getdata']);
+        Route::get('/export', [AdminController::class, 'export']);
         Route::post('/update', [AdminController::class, 'update']);
         Route::post('/change-status', [AdminController::class, 'changeStatus']);
         Route::post('/tim-kiem', [AdminController::class, 'search']);
@@ -61,7 +97,14 @@ Route::prefix('/admin')->group(function () {
         Route::post('/dong-bo', [VaiTroQuyenController::class, 'sync']);
     });
 
-    Route::prefix('/cau-hinh')->group(function () {
+    // Quản lý hồ sơ giáo viên (Admin)
+    Route::prefix('/ho-so-giao-vien')->middleware(['auth:sanctum'])->group(function () {
+        Route::get('/', [HoSoGiaoVienController::class, 'index']);
+        Route::patch('/{id}/approve', [HoSoGiaoVienController::class, 'approve']);
+        Route::patch('/{id}/reject', [HoSoGiaoVienController::class, 'reject']);
+    });
+
+    Route::prefix('/cau-hinh')->middleware(['auth:sanctum'])->group(function () {
         Route::get('/chung/data', [CauHinhController::class, 'getGeneralSettings']);
         Route::post('/chung/update', [CauHinhController::class, 'updateGeneralSettings']);
 
@@ -79,14 +122,14 @@ Route::prefix('/admin')->group(function () {
 });
 
 Route::get('/cau-hinh/footer/data', [CauHinhController::class, 'getFooterSettings']);
+Route::get('/leaderboard', [ThongTinHocVienController::class, 'leaderboard']);
 Route::get('/cau-hinh/thong-bao', [CauHinhController::class, 'getAlertSettings']);
 
-//---------------------------------------------Teacher--------------------------------------------------------------
+// ---------------------------------------------Teacher--------------------------------------------------------------
 
 Route::prefix('/teacher')->middleware(['auth:sanctum', 'role:2'])->group(function () {
     Route::prefix('/danh-muc-bai-hoc')->group(function () {
         Route::get('/', [TeacherQuanLyBaiHocController::class, 'indexDanhMuc']);
-        Route::post('/', [TeacherQuanLyBaiHocController::class, 'storeDanhMuc']);
         Route::put('/{id}', [TeacherQuanLyBaiHocController::class, 'updateDanhMuc']);
         Route::delete('/{id}', [TeacherQuanLyBaiHocController::class, 'destroyDanhMuc']);
         Route::get('/{id}/bai-hoc', [TeacherQuanLyBaiHocController::class, 'indexBaiHocTheoDanhMuc']);
@@ -94,6 +137,7 @@ Route::prefix('/teacher')->middleware(['auth:sanctum', 'role:2'])->group(functio
 
     Route::prefix('/bai-hoc')->group(function () {
         Route::get('/{id}/tu-vung', [TeacherTuVungController::class, 'index']);
+        Route::post('/{id}/tu-vung/import-excel', [TeacherTuVungController::class, 'importFromExcel']);
         Route::post('/{id}/tu-vung', [TeacherTuVungController::class, 'store']);
         Route::post('/', [TeacherQuanLyBaiHocController::class, 'storeBaiHoc']);
         Route::put('/{id}', [TeacherQuanLyBaiHocController::class, 'updateBaiHoc']);
@@ -112,10 +156,17 @@ Route::prefix('/teacher')->middleware(['auth:sanctum', 'role:2'])->group(functio
         Route::get('/bai-hoc-goi-y', [QuanHeGvHvController::class, 'danhSachBaiHocGoiY']);
         Route::post('/goi-y', [QuanHeGvHvController::class, 'guiGoiY']);
     });
+    // Đang làm
+    Route::prefix('/chat')->group(function () {
+        Route::get('/unread-count', [ChatController::class, 'unreadCount']);
+        Route::get('/sessions', [ChatController::class, 'getSessionsForTeacher']);
+        Route::get('/session/{sessionId}/messages', [ChatController::class, 'getMessages']);
+        Route::post('/session/{sessionId}/send', [ChatController::class, 'sendMessage']);
+        Route::delete('/session/{sessionId}', [ChatController::class, 'deleteSession']);
+    });
 });
 
-
-//------------------------------------------------Auth-----------------------------------------------------------
+// ------------------------------------------------Auth-----------------------------------------------------------
 
 Route::get('/check-token', [NguoiDungController::class, 'checkToken']);
 Route::post('/login-google', [NguoiDungController::class, 'loginGoogle']);
@@ -125,18 +176,36 @@ Route::post('/dang-ky', [NguoiDungController::class, 'register']);
 Route::post('/quen-mat-khau', [NguoiDungController::class, 'forgotPassword']);
 Route::post('/dat-lai-mat-khau', [NguoiDungController::class, 'resetPassword']);
 
-
-
-//---------------------------------------------CLIENT--------------------------------------------------------------
+// ---------------------------------------------CLIENT--------------------------------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::post('/phien-luyen-taps/start', [PhienLuyenTapController::class, 'start']);
+    Route::post('/phien-luyen-taps/end', [PhienLuyenTapController::class, 'end']);
+    Route::post('/phien-luyen-taps/hoan-thanh', [PhienLuyenTapController::class, 'hoanThanh']);
+    Route::get('/thong-tin-hoc-vien/me', [ThongTinHocVienController::class, 'me']);
     Route::post('/dang-xuat', [NguoiDungController::class, 'logOut']);
     Route::get('/profile', [NguoiDungController::class, 'profile']);
     Route::post('/profile/update', [NguoiDungController::class, 'updateProfile']);
     Route::post('/profile/update-avatar', [NguoiDungController::class, 'updateProfileAvatar']);
     Route::post('/profile/change-password', [NguoiDungController::class, 'changeProfilePassword']);
+    Route::post('/chat/system/session', [ChatBoxAIController::class, 'session']);
+    Route::post('/chat/system', [ChatBoxAIController::class, 'chatSystem']);
+    Route::get('/chat/system/history', [ChatBoxAIController::class, 'history']);
+    route::prefix('/tien-do-bai-hoc')->group(function () {
+        Route::get('/tong-quan', [TienDoBaiHocController::class, 'tongQuan']);
+    });
+
+    Route::post('/cham-diem-phat-am', [ChiTietLuyenTapController::class, 'chamDiemPhatAm']);
+});
+
+Route::prefix('/homepage')->group(function () {
+    Route::get('/data-open', [HomeController::class, 'dataOpen']); 
+
+    // Hồ sơ đăng ký giáo viên (Client)
+    Route::post('/ho-so-giao-vien', [HoSoGiaoVienController::class, 'store']);
+    Route::get('/ho-so-giao-vien/my-status', [HoSoGiaoVienController::class, 'myStatus']);
 });
 
 Route::prefix('/danh-muc-bai-hoc')->group(function () {
@@ -144,18 +213,24 @@ Route::prefix('/danh-muc-bai-hoc')->group(function () {
     Route::get('/', [DanhMucBaiHocController::class, 'indexPublic']);
 });
 
+// Alias theo tài liệu trangchu.md
+Route::get('/chu-de', [DanhMucBaiHocController::class, 'indexPublic']);
+
 Route::prefix('/bai-hoc')->group(function () {
 
     Route::get('/', [BaiHocController::class, 'indexPublic']);
     Route::get('/{baiHoc}', [BaiHocController::class, 'showPublic']);
 });
 
+// Dữ liệu tổng hợp cho Trang Chủ
+Route::get('/trang-chu', [TrangChuController::class, 'index']);
+
 Route::prefix('/tts-vi')->group(function () {
 
     Route::get('/', [TtsController::class, 'vietnamese']);
 });
 
-//---------------------------------------------ERROR REVIEW--------------------------------------------------------------
+// ---------------------------------------------ERROR REVIEW--------------------------------------------------------------
 Route::prefix('/error-history')->middleware('auth:sanctum')->group(function () {
     Route::get('/all', [ErrorHistoryController::class, 'getAllErrors']);
     Route::get('/by-status', [ErrorHistoryController::class, 'getErrorsByStatus']);
@@ -172,4 +247,3 @@ Route::prefix('/bookmarks')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [BookmarkController::class, 'getAllBookmarks']);
     Route::post('/', [BookmarkController::class, 'createBookmark']);
 });
-

@@ -24,6 +24,15 @@ use App\Mail\QuenMatKhauMail;
 
 class NguoiDungController extends Controller
 {
+    private const BLOCKED_ACCOUNT_MESSAGE = 'Tài khoản của bạn đã vi phạm chính sách bảo mật của chúng tôi';
+    private const ACTIVE_STATUS = 0;
+    private const BLOCKED_STATUS = 1;
+
+    private function isBlocked(NguoiDung $user): bool
+    {
+        return (int) ($user->trang_thai ?? self::ACTIVE_STATUS) === self::BLOCKED_STATUS;
+    }
+
     private function resolveAvatarUrl(?string $raw): ?string
     {
         $raw = trim((string) $raw);
@@ -248,8 +257,10 @@ class NguoiDungController extends Controller
                 'sdt'        => preg_replace('/[^0-9]/', '', $request->sdt),
                 'ngay_sinh'  => $request->ngay_sinh,
                 'vai_tro_id' => 3,
-                'trang_thai' => 1,
+                'trang_thai' => self::ACTIVE_STATUS,
             ]);
+
+            event(new \Illuminate\Auth\Events\Registered($nguoiDung));
 
             return response()->json([
                 'status'  => 1,
@@ -286,8 +297,32 @@ class NguoiDungController extends Controller
             ], 500);
         }
 
-        $client = new GoogleClient(['client_id' => $clientId]);
-        $payload = $client->verifyIdToken($idToken);
+        try {
+            $client = new GoogleClient(['client_id' => $clientId]);
+            $payload = $client->verifyIdToken($idToken);
+        } catch (\Exception $e) {
+            Log::error('Google OAuth verification failed', [
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ]);
+
+            // Fallback for development: decode JWT manually without verification
+            if (app()->environment('local', 'dev')) {
+                Log::warning('Using development JWT decode fallback (no verification)');
+                $payload = $this->decodeJwtForDevelopment($idToken);
+                if (!$payload) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'Không thể xác thực token Google. Token không hợp lệ.',
+                    ], 401);
+                }
+            } else {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Không thể xác thực với Google. Vui lòng kiểm tra kết nối internet hoặc thử đăng nhập thường.',
+                ], 503);
+            }
+        }
 
         if ($payload) {
             $ho_ten = $payload['name'];
@@ -296,11 +331,19 @@ class NguoiDungController extends Controller
             $user = NguoiDung::where('email', $email)->first();
 
             if ($user) {
+                if ($this->isBlocked($user)) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => self::BLOCKED_ACCOUNT_MESSAGE,
+                    ], 403);
+                }
+
                 $token = $user->createToken('token_nguoi_dung')->plainTextToken;
 
                 return response()->json([
                     'status'  => true,
                     'message' => 'Đăng nhập thành công',
+                    'id'      => $user->id,
                     'ho_ten'  => $user->ho_ten,
                     'email'   => $user->email,
                     'anh_dai_dien'  => $user->anh_dai_dien ?: ($payload['picture'] ?? null),
@@ -316,7 +359,7 @@ class NguoiDungController extends Controller
                     'sdt'        => null,
                     'ngay_sinh'  => null,
                     'vai_tro_id' => 3,
-                    'trang_thai' => 1,
+                    'trang_thai' => self::ACTIVE_STATUS,
                 ]);
 
                 $token = $newUser->createToken('token_nguoi_dung')->plainTextToken;
@@ -324,6 +367,7 @@ class NguoiDungController extends Controller
                 return response()->json([
                     'status'  => true,
                     'message' => 'Đăng ký và đăng nhập thành công!',
+                    'id'      => $newUser->id,
                     'ho_ten'  => $newUser->ho_ten,
                     'email'   => $newUser->email,
                     'anh_dai_dien'  => $payload['picture'] ?? null,
@@ -337,6 +381,27 @@ class NguoiDungController extends Controller
                 'status'  => false,
                 'message' => 'Token Google không hợp lệ hoặc đã hết hạn.',
             ], 401);
+        }
+    }
+
+    /**
+     * Decode JWT token manually for development when Google API is not accessible
+     * WARNING: This is NOT secure and should only be used in development
+     */
+    private function decodeJwtForDevelopment($idToken)
+    {
+        try {
+            $parts = explode('.', $idToken);
+            if (count($parts) !== 3) {
+                return null;
+            }
+
+            // Decode payload (2nd part)
+            $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+            return $payload;
+        } catch (\Exception $e) {
+            Log::warning('Failed to decode JWT manually', ['error' => $e->getMessage()]);
+            return null;
         }
     }
     public function login(DangNhapRequest $request)
@@ -371,6 +436,12 @@ class NguoiDungController extends Controller
         $user = NguoiDung::where('email', $request->email)->first();
 
         if ($user && Hash::check($request->password, $user->mat_khau)) {
+            if ($this->isBlocked($user)) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => self::BLOCKED_ACCOUNT_MESSAGE,
+                ], 403);
+            }
 
             // Xóa toàn bộ token cũ để mỗi lần đăng nhập chỉ dùng 1 thiết bị (Tùy chọn)
             // $user->tokens()->delete();
@@ -378,6 +449,7 @@ class NguoiDungController extends Controller
             return response()->json([
                 'status'  => 1,
                 'message' => 'Bạn đã đăng nhập thành công',
+                'id'      => $user->id,
                 'ho_ten'  => $user->ho_ten,
                 'email'   => $user->email,
                 'anh_dai_dien'  => $user->anh_dai_dien,
@@ -397,8 +469,16 @@ class NguoiDungController extends Controller
     {
         $userLogin = Auth::guard('sanctum')->user();
         if ($userLogin) {
+            if ($this->isBlocked($userLogin)) {
+                return response()->json([
+                    'status'    => false,
+                    'message'   => self::BLOCKED_ACCOUNT_MESSAGE,
+                ], 403);
+            }
+
             return response()->json([
                 'status'    => true,
+                'id'        => $userLogin->id,
                 'ho_ten'    => $userLogin->ho_ten,
                 'anh_dai_dien'    => $userLogin->anh_dai_dien,
                 'email'      => $userLogin->email,
