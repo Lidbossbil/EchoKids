@@ -7,6 +7,7 @@ use App\Http\Requests\StartPhienRequest;
 use App\Http\Requests\EndPhienRequest;
 use App\Models\PhienLuyenTap;
 use App\Models\ThongTinHocVien;
+use App\Models\TienDoBaiHoc;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -137,6 +138,50 @@ class PhienLuyenTapController extends Controller
 
             $tt->ngay_hoc_cuoi_cung = $today;
             $tt->save();
+
+            // --- Upsert tiến độ bài học ---
+            $baiHocId  = $phien->bai_hoc_id;
+            $hocVienId = $phien->nguoi_dung_id;
+
+            // Tất cả phiên của học viên trong bài học này
+            $allPhienIds = DB::table('phien_luyen_taps')
+                ->where('nguoi_dung_id', $hocVienId)
+                ->where('bai_hoc_id', $baiHocId)
+                ->pluck('id');
+
+            // Số từ distinct đã luyện tập (tích lũy qua mọi phiên)
+            $soTuDaHoc = DB::table('chi_tiet_luyen_taps')
+                ->whereIn('phien_id', $allPhienIds)
+                ->distinct()
+                ->count('tu_vung_id');
+
+            // Tổng số từ trong bài học
+            $tongTuVung = DB::table('tu_vungs')
+                ->where('bai_hoc_id', $baiHocId)
+                ->count();
+
+            // Điểm trung bình tích lũy (chỉ tính những lần có điểm)
+            $diemTrungBinh = DB::table('chi_tiet_luyen_taps')
+                ->whereIn('phien_id', $allPhienIds)
+                ->whereNotNull('diem_chinh_xac')
+                ->avg('diem_chinh_xac') ?? 0;
+
+            $phanTramHoanThanh = $tongTuVung > 0
+                ? min(100, round(($soTuDaHoc / $tongTuVung) * 100, 2))
+                : 0;
+
+            $trangThai = $phanTramHoanThanh >= 100 ? 1 : 0;
+
+            TienDoBaiHoc::updateOrCreate(
+                ['hoc_vien_id' => $hocVienId, 'bai_hoc_id' => $baiHocId],
+                [
+                    'so_tu_da_hoc'          => $soTuDaHoc,
+                    'phan_tram_hoan_thanh'  => $phanTramHoanThanh,
+                    'trang_thai'            => $trangThai,
+                    'diem_trung_binh'       => round((float) $diemTrungBinh, 2),
+                    'thoi_gian_hoc_cuoi'    => now(),
+                ]
+            );
 
             DB::commit();
 

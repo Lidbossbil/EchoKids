@@ -1,9 +1,9 @@
 <template>
   <div class="bg-white p-0">
     <div class="carousel-full">
-      <div class="container-fluid p-0 ">
+      <div class="container-fluid p-0">
         <!-- Carousel Start -->
-        <div class="container-fluid p-0 ">
+        <div class="container-fluid p-0">
           <div class="owl-carousel header-carousel position-relative">
             <div class="owl-carousel-item position-relative">
               <img
@@ -56,7 +56,7 @@
                       </p>
                       <div class="d-flex flex-wrap gap-3">
                         <a
-                          href="/subjects"
+                          href="/bai-hoc"
                           class="btn rounded-pill px-5 py-3"
                           style="
                             background: #ff6b35;
@@ -137,7 +137,7 @@
                       </p>
                       <div class="d-flex flex-wrap gap-3">
                         <a
-                          href="/progress"
+                          href="/tien-do"
                           class="btn rounded-pill px-5 py-3"
                           style="
                             background: #ff6b35;
@@ -185,69 +185,77 @@
         </div>
 
         <div class="row g-4">
-<div class="col-lg-3 col-sm-6">
-  <div class="facility-item">
-    <div class="facility-text bg-primary text-center">
-      <div class="d-flex justify-content-center mb-4">
-        <i class="fa fa-headphones fa-3x text-primary"></i>
-      </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="facility-item">
+              <div class="facility-text bg-primary text-center">
+                <div class="d-flex justify-content-center mb-4">
+                  <i class="fa fa-headphones fa-3x text-primary"></i>
+                </div>
 
-      <h3 class="text-primary mb-3">Luyện Nghe</h3>
+                <router-link to="/bai-hoc" class="text-decoration-none">
+                  <h3 class="text-primary mb-3">Luyện Nghe</h3>
+                </router-link>
 
-      <p class="mb-0 text-primary mb-3">
-        Nghe âm chuẩn và nhận diện từ vựng qua hình ảnh sinh động.
-      </p>
-    </div>
-  </div>
-</div>
+                <p class="mb-0 text-primary mb-3">
+                  Nghe âm chuẩn và nhận diện từ vựng qua hình ảnh sinh động.
+                </p>
+              </div>
+            </div>
+          </div>
 
-<div class="col-lg-3 col-sm-6">
-  <div class="facility-item">
-    <div class="facility-text bg-success text-center">
-      <div class="d-flex justify-content-center mb-4">
-        <i class="fa fa-microphone fa-3x text-success"></i>
-      </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="facility-item">
+              <div class="facility-text bg-success text-center">
+                <div class="d-flex justify-content-center mb-4">
+                  <i class="fa fa-microphone fa-3x text-success"></i>
+                </div>
 
-      <h3 class="text-success mb-3">Luyện Nói</h3>
+                <router-link to="/bai-hoc">
+                  <h3 class="text-success mb-3">Luyện Nói</h3>
+                </router-link>
 
-      <p class="mb-0 text-success mb-3">
-        Thu âm giọng nói của trẻ và so sánh với phát âm chuẩn.
-      </p>
-    </div>
-  </div>
-</div>
+                <p class="mb-0 text-success mb-3">
+                  Thu âm giọng nói của trẻ và so sánh với phát âm chuẩn.
+                </p>
+              </div>
+            </div>
+          </div>
 
-<div class="col-lg-3 col-sm-6">
-  <div class="facility-item">
-    <div class="facility-text bg-warning text-center">
-      <div class="d-flex justify-content-center mb-4">
-        <i class="fa fa-chart-line fa-3x text-warning"></i>
-      </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="facility-item">
+              <div class="facility-text bg-warning text-center">
+                <div class="d-flex justify-content-center mb-4">
+                  <i class="fa fa-chart-line fa-3x text-warning"></i>
+                </div>
 
-      <h3 class="text-warning mb-3">Theo Dõi</h3>
+                <router-link to="/tien-do" class="text-decoration-none">
+                  <h3 class="text-warning mb-3">Theo Dõi</h3>
+                </router-link>
 
-      <p class="mb-0 text-warning mb-3">
-        Xem tiến độ học tập và lỗi phát âm thường gặp của trẻ.
-      </p>
-    </div>
-  </div>
-</div>
+                <p class="mb-0 text-warning mb-3">
+                  Xem tiến độ học tập và lỗi phát âm thường gặp của trẻ.
+                </p>
+              </div>
+            </div>
+          </div>
 
-<div class="col-lg-3 col-sm-6">
-  <div class="facility-item">
-    <div class="facility-text bg-info text-center">
-      <div class="d-flex justify-content-center mb-4">
-        <i class="fa fa-star fa-3x text-info"></i>
-      </div>
+          <div class="col-lg-3 col-sm-6">
+            <div class="facility-item">
+              <div class="facility-text bg-info text-center">
+                <div class="d-flex justify-content-center mb-4">
+                  <i class="fa fa-star fa-3x text-info"></i>
+                </div>
 
-      <h3 class="text-info mb-3">Khen Thưởng</h3>
+                <router-link to="/xep-hang" class="text-decoration-none">
+                  <h3 class="text-info mb-3">Khen Thưởng</h3>
+                </router-link>
 
-      <p class="mb-0 text-info mb-3">
-        Tạo động lực học tập bằng huy hiệu và phần thưởng mỗi ngày.
-      </p>
-    </div>
-  </div>
-</div>
+                <p class="mb-0 text-info mb-3">
+                  Tạo động lực học tập bằng huy hiệu và phần thưởng mỗi ngày.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -269,27 +277,86 @@
         </div>
 
         <div class="row g-4 mb-5">
-          <div
-            v-for="(cd, idx) in chuDeNoiBat"
-            :key="cd.id || idx"
-            class="col-lg-3 col-md-6 wow fadeInUp"
-            :data-wow-delay="`${0.1 + idx * 0.1}s`"
-          >
-            <div class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100">
+          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+            <div
+              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
+            >
               <div class="favorite-image-wrapper">
                 <img
-                  :src="anhChuDe(idx)"
-                  :alt="cd.ten_danh_muc"
+                  src="/Client/images/classes-1.jpg"
+                  alt="Động vật"
                   class="img-fluid w-100 favorite-image"
                 />
               </div>
 
               <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">{{ cd.ten_danh_muc }}</h5>
-                <p class="text-muted small mb-1">
-                  {{ cd.mo_ta || "Chủ đề luyện phát âm hấp dẫn cho bé." }}
+                <h5 class="fw-bold mb-2 text-dark">Động Vật</h5>
+                <p class="text-muted small mb-0">
+                  Khám phá thế giới động vật vui nhộn.
                 </p>
-                <small class="text-primary fw-semibold">{{ cd.luot_luyen || 0 }} lượt luyện</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
+            <div
+              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
+            >
+              <div class="favorite-image-wrapper">
+                <img
+                  src="/Client/images/classes-2.jpg"
+                  alt="Màu sắc"
+                  class="img-fluid w-100 favorite-image"
+                />
+              </div>
+
+              <div class="p-4 text-center">
+                <h5 class="fw-bold mb-2 text-dark">Màu Sắc</h5>
+                <p class="text-muted small mb-0">
+                  Học nhận biết và gọi tên các màu sắc.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
+            <div
+              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
+            >
+              <div class="favorite-image-wrapper">
+                <img
+                  src="/Client/images/classes-3.jpg"
+                  alt="Âm nhạc"
+                  class="img-fluid w-100 favorite-image"
+                />
+              </div>
+
+              <div class="p-4 text-center">
+                <h5 class="fw-bold mb-2 text-dark">Âm Nhạc</h5>
+                <p class="text-muted small mb-0">
+                  Làm quen với âm thanh và nhạc cụ.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
+            <div
+              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
+            >
+              <div class="favorite-image-wrapper">
+                <img
+                  src="/Client/images/classes-4.jpg"
+                  alt="Giao tiếp"
+                  class="img-fluid w-100 favorite-image"
+                />
+              </div>
+
+              <div class="p-4 text-center">
+                <h5 class="fw-bold mb-2 text-dark">Giao Tiếp</h5>
+                <p class="text-muted small mb-0">
+                  Luyện nói các câu đơn giản mỗi ngày.
+                </p>
               </div>
             </div>
           </div>
@@ -315,32 +382,100 @@
         </div>
 
         <div class="row g-4">
-          <div
-            v-for="(bh, idx) in baiHocNoiBat"
-            :key="bh.id || idx"
-            class="col-lg-3 col-md-6 wow fadeInUp"
-            :data-wow-delay="`${0.1 + idx * 0.1}s`"
-          >
-            <div class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100">
+          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+            <div
+              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
+            >
               <div class="favorite-image-wrapper">
                 <img
-                  :src="anhBaiHoc(idx)"
-                  :alt="bh.tieu_de"
+                  src="/Client/images/classes-5.jpg"
+                  alt="Phát âm chữ cái"
                   class="img-fluid w-100 favorite-image"
                 />
               </div>
 
               <div class="p-4 text-center">
-                <h5 class="fw-bold mb-2 text-dark">{{ bh.tieu_de }}</h5>
-                <p class="text-muted small mb-2">
-                  {{ bh.mo_ta || "Bài học luyện phát âm phù hợp cho bé." }}
-                </p>
+                <h5 class="fw-bold mb-2 text-dark">Phát Âm Chữ Cái</h5>
                 <p class="text-muted small mb-3">
-                  <span class="me-2">{{ bh.so_tu_vung || 0 }} từ</span>
-                  <span>{{ bh.luot_luyen || 0 }} lượt luyện</span>
+                  Bé luyện phát âm bảng chữ cái tiếng Việt.
                 </p>
 
-                <button class="btn btn-outline-primary rounded-pill px-4" @click="$router.push(`/bai-hoc/${bh.id}`)">
+                <button class="btn btn-outline-primary rounded-pill px-4">
+                  Học Ngay
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
+            <div
+              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
+            >
+              <div class="favorite-image-wrapper">
+                <img
+                  src="/Client/images/classes-6.jpg"
+                  alt="Nhận biết con vật"
+                  class="img-fluid w-100 favorite-image"
+                />
+              </div>
+
+              <div class="p-4 text-center">
+                <h5 class="fw-bold mb-2 text-dark">Nhận Biết Con Vật</h5>
+                <p class="text-muted small mb-3">
+                  Học tên và tiếng kêu của các con vật.
+                </p>
+
+                <button class="btn btn-outline-primary rounded-pill px-4">
+                  Học Ngay
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
+            <div
+              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
+            >
+              <div class="favorite-image-wrapper">
+                <img
+                  src="/Client/images/about-1.jpg"
+                  alt="Tập đếm số"
+                  class="img-fluid w-100 favorite-image"
+                />
+              </div>
+
+              <div class="p-4 text-center">
+                <h5 class="fw-bold mb-2 text-dark">Tập Đếm Số</h5>
+                <p class="text-muted small mb-3">
+                  Làm quen với các con số từ 1 đến 10.
+                </p>
+
+                <button class="btn btn-outline-primary rounded-pill px-4">
+                  Học Ngay
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
+            <div
+              class="favorite-card bg-white rounded-4 shadow-sm overflow-hidden h-100"
+            >
+              <div class="favorite-image-wrapper">
+                <img
+                  src="/Client/images/about-2.jpg"
+                  alt="Đồ vật quanh em"
+                  class="img-fluid w-100 favorite-image"
+                />
+              </div>
+
+              <div class="p-4 text-center">
+                <h5 class="fw-bold mb-2 text-dark">Đồ Vật Quanh Em</h5>
+                <p class="text-muted small mb-3">
+                  Nhận biết các đồ vật quen thuộc hằng ngày.
+                </p>
+
+                <button class="btn btn-outline-primary rounded-pill px-4">
                   Học Ngay
                 </button>
               </div>
@@ -365,14 +500,14 @@
               Đồng Hành Cùng Trẻ Trên Hành Trình Luyện Phát Âm
             </h1>
 
-            <p class=" fs-5">
+            <p class="fs-5">
               EchoKids là nền tảng hỗ trợ trẻ em luyện phát âm tiếng Việt thông
               qua hình ảnh, âm thanh, video khẩu hình và các bài tập tương tác
               thú vị. Hệ thống giúp trẻ nhận biết âm, luyện nói và cải thiện kỹ
               năng giao tiếp mỗi ngày.
             </p>
 
-            <p class="mb-4  fs-5">
+            <p class="mb-4 fs-5">
               Với công nghệ AI chấm điểm phát âm, phụ huynh và giáo viên có thể
               dễ dàng theo dõi tiến độ học tập, phát hiện lỗi phát âm thường gặp
               và nhận gợi ý bài luyện phù hợp cho từng trẻ.
@@ -380,28 +515,28 @@
 
             <div class="row g-3 mb-4">
               <div class="col-sm-6">
-                <p class="mb-2  fs-5">
+                <p class="mb-2 fs-5">
                   <i class="fa fa-check text-primary me-2"></i>
                   AI chấm điểm phát âm
                 </p>
               </div>
 
               <div class="col-sm-6">
-                <p class="mb-2  fs-5">
+                <p class="mb-2 fs-5">
                   <i class="fa fa-check text-primary me-2"></i>
                   Theo dõi tiến độ học tập
                 </p>
               </div>
 
               <div class="col-sm-6">
-                <p class="mb-2  fs-5">
+                <p class="mb-2 fs-5">
                   <i class="fa fa-check text-primary me-2"></i>
                   Gợi ý bài luyện phù hợp
                 </p>
               </div>
 
               <div class="col-sm-6">
-                <p class="mb-2  fs-5">
+                <p class="mb-2 fs-5">
                   <i class="fa fa-check text-primary me-2"></i>
                   Đồng hành cùng phụ huynh
                 </p>
@@ -473,9 +608,9 @@
           data-wow-delay="0.1s"
           style="max-width: 700px"
         >
-          <h1 class="mb-3 ">Đội Ngũ Đồng Hành Cùng Trẻ</h1>
+          <h1 class="mb-3">Đội Ngũ Đồng Hành Cùng Trẻ</h1>
 
-          <p class=" fs-5">
+          <p class="fs-5">
             EchoKids được xây dựng với sự hỗ trợ từ giáo viên, chuyên gia ngôn
             ngữ và phụ huynh nhằm giúp trẻ cải thiện khả năng phát âm tiếng Việt
             một cách tự nhiên, vui vẻ và hiệu quả hơn mỗi ngày.
@@ -502,7 +637,7 @@
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
-                    <i class="ml-1 fa fa-microphone"></i>
+                    <i class="fa fa-microphone"></i>
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
@@ -535,7 +670,7 @@
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
-                    <i class="ml-1 fa fa-headphones"></i>
+                    <i class="fa fa-headphones"></i>
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
@@ -568,7 +703,7 @@
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
-                    <i class="ml-1 fa fa-microchip"></i>
+                    <i class="fa fa-microchip"></i>
                   </a>
 
                   <a class="btn btn-square btn-primary mx-1" href="">
@@ -591,7 +726,7 @@
           style="max-width: 600px"
         >
           <h1 class="mb-3">Những Gương Mặt Nổi Bật</h1>
-          <p class=" fs-5">
+          <p class="fs-5">
             EchoKids luôn ghi nhận sự cố gắng của các bé trong quá trình luyện
             phát âm. Đây là những học sinh có nhiều tiến bộ, duy trì streak học
             tập tốt và hoàn thành xuất sắc các bài luyện.
@@ -599,27 +734,24 @@
         </div>
 
         <div class="row g-4">
-          <div
-            v-for="(hs, idx) in hocSinhNoiBat"
-            :key="hs.id || idx"
-            class="col-lg-4 col-md-6 wow fadeInUp"
-            :data-wow-delay="`${0.1 + idx * 0.2}s`"
-          >
+          <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
             <div class="classes-item">
               <div class="bg-light rounded-circle w-75 mx-auto p-3">
                 <img
                   class="img-fluid rounded-circle"
-                  :src="anhHocSinh(hs, idx)"
-                  :alt="hs.ho_ten"
+                  src="/Client/images/classes-1.jpg"
+                  alt=""
                 />
               </div>
 
               <div class="bg-light rounded p-4 pt-5 mt-n5">
                 <a class="d-block text-center h3 mt-3 mb-4" href="">
-                  {{ hs.ho_ten }}
+                  Bé Minh Anh
                 </a>
 
-                <div class="d-flex align-items-center justify-content-between mb-4">
+                <div
+                  class="d-flex align-items-center justify-content-between mb-4"
+                >
                   <div class="d-flex align-items-center">
                     <img
                       class="rounded-circle flex-shrink-0"
@@ -629,27 +761,161 @@
                     />
 
                     <div class="ms-3">
-                      <h6 class="text-primary mb-1">EchoKids</h6>
-                      <small>Học viên nổi bật tuần này</small>
+                      <h6 class="text-primary mb-1">Cô Nguyễn Thảo</h6>
+                      <small>Phát âm rõ hơn sau 2 tuần luyện tập</small>
                     </div>
                   </div>
 
                   <span class="bg-primary text-white rounded-pill py-2 px-3">
-                    {{ hs.diem_trung_binh }}/100
+                    95%
                   </span>
                 </div>
 
                 <div class="row g-1">
-                  <div class="col-6">
-                    <div class="border-top border-3 border-success pt-2">
-                      <h6 class="text-success mb-1">Phiên luyện:</h6>
-                      <small>{{ hs.so_phien || 0 }} phiên</small>
+                  <div class="col-4">
+                    <div class="border-top border-3 border-primary pt-2">
+                      <h6 class="text-primary mb-1">Streak:</h6>
+                      <small>12 Ngày</small>
                     </div>
                   </div>
-                  <div class="col-6">
+
+                  <div class="col-4">
+                    <div class="border-top border-3 border-success pt-2">
+                      <h6 class="text-success mb-1">Bài Học:</h6>
+                      <small>15 Bài</small>
+                    </div>
+                  </div>
+
+                  <div class="col-4">
                     <div class="border-top border-3 border-warning pt-2">
-                      <h6 class="text-warning mb-1">Điểm TB:</h6>
-                      <small>{{ hs.diem_trung_binh || 0 }}/100</small>
+                      <h6 class="text-warning mb-1">Điểm:</h6>
+                      <small>9.5/10</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
+            <div class="classes-item">
+              <div class="bg-light rounded-circle w-75 mx-auto p-3">
+                <img
+                  class="img-fluid rounded-circle"
+                  src="/Client/images/classes-2.jpg"
+                  alt=""
+                />
+              </div>
+
+              <div class="bg-light rounded p-4 pt-5 mt-n5">
+                <a class="d-block text-center h3 mt-3 mb-4" href="">
+                  Bé Gia Hân
+                </a>
+
+                <div
+                  class="d-flex align-items-center justify-content-between mb-4"
+                >
+                  <div class="d-flex align-items-center">
+                    <img
+                      class="rounded-circle flex-shrink-0"
+                      src="/Client/images/user.jpg"
+                      alt=""
+                      style="width: 45px; height: 45px"
+                    />
+
+                    <div class="ms-3">
+                      <h6 class="text-primary mb-1">Thầy Minh Quân</h6>
+                      <small>Hoàn thành tốt khóa luyện âm cơ bản</small>
+                    </div>
+                  </div>
+
+                  <span class="bg-primary text-white rounded-pill py-2 px-3">
+                    98%
+                  </span>
+                </div>
+
+                <div class="row g-1">
+                  <div class="col-4">
+                    <div class="border-top border-3 border-primary pt-2">
+                      <h6 class="text-primary mb-1">Streak:</h6>
+                      <small>20 Ngày</small>
+                    </div>
+                  </div>
+
+                  <div class="col-4">
+                    <div class="border-top border-3 border-success pt-2">
+                      <h6 class="text-success mb-1">Bài Học:</h6>
+                      <small>24 Bài</small>
+                    </div>
+                  </div>
+
+                  <div class="col-4">
+                    <div class="border-top border-3 border-warning pt-2">
+                      <h6 class="text-warning mb-1">Điểm:</h6>
+                      <small>9.8/10</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
+            <div class="classes-item">
+              <div class="bg-light rounded-circle w-75 mx-auto p-3">
+                <img
+                  class="img-fluid rounded-circle"
+                  src="/Client/images/classes-3.jpg"
+                  alt=""
+                />
+              </div>
+
+              <div class="bg-light rounded p-4 pt-5 mt-n5">
+                <a class="d-block text-center h3 mt-3 mb-4" href="">
+                  Bé Quốc Bảo
+                </a>
+
+                <div
+                  class="d-flex align-items-center justify-content-between mb-4"
+                >
+                  <div class="d-flex align-items-center">
+                    <img
+                      class="rounded-circle flex-shrink-0"
+                      src="/Client/images/user.jpg"
+                      alt=""
+                      style="width: 45px; height: 45px"
+                    />
+
+                    <div class="ms-3">
+                      <h6 class="text-primary mb-1">Cô Thu Hà</h6>
+                      <small>Đã cải thiện rõ lỗi phát âm âm “s” và “x”</small>
+                    </div>
+                  </div>
+
+                  <span class="bg-primary text-white rounded-pill py-2 px-3">
+                    90%
+                  </span>
+                </div>
+
+                <div class="row g-1">
+                  <div class="col-4">
+                    <div class="border-top border-3 border-primary pt-2">
+                      <h6 class="text-primary mb-1">Streak:</h6>
+                      <small>10 Ngày</small>
+                    </div>
+                  </div>
+
+                  <div class="col-4">
+                    <div class="border-top border-3 border-success pt-2">
+                      <h6 class="text-success mb-1">Bài Học:</h6>
+                      <small>12 Bài</small>
+                    </div>
+                  </div>
+
+                  <div class="col-4">
+                    <div class="border-top border-3 border-warning pt-2">
+                      <h6 class="text-warning mb-1">Điểm:</h6>
+                      <small>9.0/10</small>
                     </div>
                   </div>
                 </div>
@@ -665,93 +931,259 @@
 <script>
 import axios from "axios";
 
+const TOPIC_STYLE_PRESETS = [
+  { image: "/Client/images/classes-1.jpg" },
+  { image: "/Client/images/classes-2.jpg" },
+  { image: "/Client/images/classes-3.jpg" },
+  { image: "/Client/images/classes-4.jpg" },
+];
+
+const LESSON_STYLE_PRESETS = [
+  { image: "/Client/images/classes-5.jpg" },
+  { image: "/Client/images/classes-6.jpg" },
+  { image: "/Client/images/about-1.jpg" },
+  { image: "/Client/images/about-2.jpg" },
+];
+
 export default {
   name: "HomePage",
+
   data() {
     return {
-      apiBase: (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, ""),
-      chuDeNoiBat: [],
-      baiHocNoiBat: [],
-      hocSinhNoiBat: [],
+      favoriteTopics: [],
+      favoriteLessons: [],
     };
   },
+
   mounted() {
-    this.taiDuLieuTrangChu();
+    this.fetchHomeData();
     this.initCarousel();
   },
+
   beforeUnmount() {
     const $carousel = $(".header-carousel");
+
     if ($carousel.length && $carousel.hasClass("owl-loaded")) {
       $carousel.trigger("destroy.owl.carousel");
     }
   },
+
   watch: {
     $route() {
       this.$nextTick(() => {
         this.initCarousel();
+        this.hydrateHomepageCards();
       });
     },
   },
+
   methods: {
-    taiDuLieuTrangChu() {
+    fetchHomeData() {
       axios
-        .get(this.apiBase + "/api/trang-chu")
+        .get("http://127.0.0.1:8000/api/homepage/data-open")
         .then((res) => {
-          const d = res.data?.data || {};
-          this.chuDeNoiBat = d.chu_de_noi_bat || [];
-          this.baiHocNoiBat = d.bai_hoc_noi_bat || [];
-          this.hocSinhNoiBat = d.hoc_sinh_noi_bat || [];
+          const categories = Array.isArray(res.data?.featured_categories)
+            ? res.data.featured_categories
+            : [];
+          const lessons = Array.isArray(res.data?.featured_lessons)
+            ? res.data.featured_lessons
+            : [];
+
+          this.favoriteTopics = categories.map((item, index) =>
+            this.mapTopic(item, index)
+          );
+          this.favoriteLessons = lessons.map((item, index) =>
+            this.mapLesson(item, index)
+          );
+
+          this.$nextTick(() => {
+            this.hydrateHomepageCards();
+          });
         })
-        .catch(() => {
-          this.chuDeNoiBat = [];
-          this.baiHocNoiBat = [];
-          this.hocSinhNoiBat = [];
+        .catch((error) => {
+          console.error(error);
+          this.favoriteTopics = [];
+          this.favoriteLessons = [];
         });
     },
-    anhChuDe(idx) {
-      const imgs = [
-        "/Client/images/classes-1.jpg",
-        "/Client/images/classes-2.jpg",
-        "/Client/images/classes-3.jpg",
-        "/Client/images/classes-4.jpg",
-      ];
-      return imgs[idx % imgs.length];
+
+    mapTopic(item, index) {
+      const style = TOPIC_STYLE_PRESETS[index % TOPIC_STYLE_PRESETS.length];
+
+      return {
+        id: item.id,
+        name: item.ten_danh_muc,
+        description: item.mo_ta || "",
+        totalLesson: item.so_luong_bai_hoc ?? 0,
+        image: style.image,
+      };
     },
-    anhBaiHoc(idx) {
-      const imgs = [
-        "/Client/images/classes-5.jpg",
-        "/Client/images/classes-6.jpg",
-        "/Client/images/about-1.jpg",
-        "/Client/images/about-2.jpg",
-      ];
-      return imgs[idx % imgs.length];
+
+    mapLesson(item, index) {
+      const style = LESSON_STYLE_PRESETS[index % LESSON_STYLE_PRESETS.length];
+
+      return {
+        id: item.id,
+        title: item.tieu_de,
+        description: item.mo_ta || "",
+        categoryId: item.danh_muc_id,
+        image: style.image,
+      };
     },
-    anhHocSinh(hs, idx) {
-      if (hs?.anh_dai_dien) {
-        if (String(hs.anh_dai_dien).startsWith("http")) return hs.anh_dai_dien;
-        return `${this.apiBase}/storage/${String(hs.anh_dai_dien).replace(/^\/+/, "")}`;
+
+    hydrateHomepageCards() {
+      if (!this.$el) {
+        return;
       }
-      const imgs = [
-        "/Client/images/classes-1.jpg",
-        "/Client/images/classes-2.jpg",
-        "/Client/images/classes-3.jpg",
-      ];
-      return imgs[idx % imgs.length];
+
+      const cards = Array.from(this.$el.querySelectorAll(".favorite-card"));
+      const topicCards = cards.slice(0, 4);
+      const lessonCards = cards.slice(4, 8);
+
+      topicCards.forEach((card, index) => {
+        this.hydrateTopicCard(card, this.favoriteTopics[index]);
+      });
+
+      lessonCards.forEach((card, index) => {
+        this.hydrateLessonCard(card, this.favoriteLessons[index]);
+      });
+
+      const primaryButtons = Array.from(
+        this.$el.querySelectorAll(
+          ".page-section .text-center button.btn.btn-primary.rounded-pill"
+        )
+      );
+
+      if (primaryButtons[0]) {
+        primaryButtons[0].onclick = () => this.goToCategoryList();
+      }
+
+      if (primaryButtons[1]) {
+        primaryButtons[1].onclick = () => this.goToLessonList();
+      }
     },
+
+    hydrateTopicCard(card, topic) {
+      const column = card.closest(".col-lg-3");
+      if (!topic) {
+        if (column) {
+          column.style.display = "none";
+        }
+        return;
+      }
+
+      if (column) {
+        column.style.display = "";
+      }
+
+      card.style.cursor = "pointer";
+      card.onclick = () => this.goToCategory(topic.id);
+
+      const image = card.querySelector("img");
+      if (image) {
+        image.src = topic.image;
+        image.alt = topic.name;
+      }
+
+      const title = card.querySelector("h5");
+      if (title) {
+        title.textContent = topic.name;
+      }
+
+      const desc = card.querySelector("p");
+      if (desc) {
+        desc.textContent = topic.description || "Chua cap nhat mo ta.";
+      }
+
+      let meta = card.querySelector("small");
+      if (!meta) {
+        meta = document.createElement("small");
+        meta.className = "text-primary fw-semibold d-block mt-2";
+        card.querySelector(".p-4")?.appendChild(meta);
+      }
+
+      meta.textContent = `${topic.totalLesson} bai hoc`;
+    },
+
+    hydrateLessonCard(card, lesson) {
+      const column = card.closest(".col-lg-3");
+      if (!lesson) {
+        if (column) {
+          column.style.display = "none";
+        }
+        return;
+      }
+
+      if (column) {
+        column.style.display = "";
+      }
+
+      card.onclick = null;
+
+      const image = card.querySelector("img");
+      if (image) {
+        image.src = lesson.image;
+        image.alt = lesson.title;
+      }
+
+      const title = card.querySelector("h5");
+      if (title) {
+        title.textContent = lesson.title;
+      }
+
+      const desc = card.querySelector("p");
+      if (desc) {
+        desc.textContent = lesson.description || "San sang cho be luyen tap.";
+      }
+
+      const button = card.querySelector("button");
+      if (button) {
+        button.onclick = (event) => {
+          event.stopPropagation();
+          this.goToLesson(lesson.id);
+        };
+      }
+    },
+
+    goToCategory(categoryId) {
+      this.$router.push({
+        path: "/bai-hoc",
+        query: { danh_muc_id: String(categoryId) },
+      });
+    },
+
+    goToLesson(lessonId) {
+      this.$router.push(`/chi-tiet-bai-hoc/${lessonId}`);
+    },
+
+    goToCategoryList() {
+      this.$router.push("/chu-de");
+    },
+
+    goToLessonList() {
+      this.$router.push("/bai-hoc");
+    },
+
     initCarousel() {
       this.$nextTick(() => {
         const $carousel = $(".header-carousel");
+
         if (window.$ && $carousel.length) {
+          // destroy carousel cũ
           if ($carousel.hasClass("owl-loaded")) {
             $carousel.trigger("destroy.owl.carousel");
+
             $carousel.removeClass("owl-loaded owl-hidden");
             $carousel.find(".owl-stage-outer").children().unwrap();
             $carousel.find(".owl-stage").children().unwrap();
             $carousel.find(".owl-item").children().unwrap();
+
             $carousel.find(".owl-stage-outer").remove();
             $carousel.find(".owl-nav").remove();
             $carousel.find(".owl-dots").remove();
           }
+
+          // khởi tạo lại
           $carousel.owlCarousel({
             autoplay: true,
             autoplayTimeout: 5000,
@@ -772,7 +1204,7 @@ export default {
   },
 };
 </script>
-<style scoped>
+<style>
 .carousel-full {
   width: 100vw;
   margin-left: calc(-50vw + 50%);
@@ -784,28 +1216,6 @@ export default {
   padding-left: 60px;
   padding-right: 60px;
 }
-
-.team-text h3 {
-  font-size: 20px;
-  line-height: 1.15;
-  margin-bottom: 8px;
-}
-
-.team-text p {
-  font-size: 13px;
-  line-height: 1.50;
-  margin-bottom: 10px;
-}
-
-@media (max-width: 1200px) {
-  .team-text h3 {
-    font-size: 1.55rem;
-  }
-  .team-text p {
-    font-size: 0.95rem;
-  }
-}
-
 @media (max-width: 991px) {
   .page-section {
     padding-left: 20px;
