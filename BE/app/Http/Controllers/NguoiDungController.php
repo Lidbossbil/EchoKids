@@ -260,6 +260,8 @@ class NguoiDungController extends Controller
                 'trang_thai' => self::ACTIVE_STATUS,
             ]);
 
+            event(new \Illuminate\Auth\Events\Registered($nguoiDung));
+
             return response()->json([
                 'status'  => 1,
                 'message' => 'Đăng ký tài khoản thành công! Vui lòng đăng nhập để tiếp tục.',

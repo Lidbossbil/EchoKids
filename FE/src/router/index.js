@@ -98,6 +98,12 @@ const routes = [
     meta: { layout: "client" },
     beforeEnter: checkClient,
   },
+  {
+    path: "/on-tap-loi",
+    component: () => import("../components/KhachHang/OnTapLoiSai/index.vue"),
+    meta: { layout: "client" },
+    beforeEnter: checkClient,
+  },
 
   //---------------------------------------------ADMIN--------------------------------------------------------------
   {

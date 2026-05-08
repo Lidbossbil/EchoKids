@@ -16,6 +16,9 @@ use App\Http\Controllers\TeacherTuVungController;
 use App\Http\Controllers\TtsController;
 use App\Http\Controllers\PhienLuyenTapController;
 use App\Http\Controllers\ThongTinHocVienController;
+use App\Http\Controllers\ChiTietLuyenTapController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\TienDoBaiHocController;
 use App\Http\Controllers\VaiTroController;
 use App\Http\Controllers\VaiTroQuyenController;
 use Illuminate\Http\Request;
@@ -174,6 +177,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chat/system/session', [ChatBoxAIController::class, 'session']);
     Route::post('/chat/system', [ChatBoxAIController::class, 'chatSystem']);
     Route::get('/chat/system/history', [ChatBoxAIController::class, 'history']);
+    route::prefix('/tien-do-bai-hoc')->group(function () {
+        Route::get('/tong-quan', [TienDoBaiHocController::class, 'tongQuan']);
+    });
+
+    Route::post('/cham-diem-phat-am', [ChiTietLuyenTapController::class, 'chamDiemPhatAm']);
+});
+
+Route::prefix('/homepage')->group(function () {
+    Route::get('/data-open', [HomeController::class, 'dataOpen']); 
 });
 
 Route::prefix('/danh-muc-bai-hoc')->group(function () {
