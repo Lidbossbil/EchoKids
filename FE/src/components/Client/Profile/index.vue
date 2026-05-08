@@ -14,6 +14,12 @@
                 <i class="fa-solid fa-lock me-2"></i>Đổi mật khẩu
               </a>
             </li>
+            
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="tab" href="#nap-tien" @click.once="loadSoDu">
+                <i class="fa-solid fa-wallet me-2"></i>Ví & Giao dịch
+              </a>
+            </li>
             <li v-if="isHocVien" class="nav-item">
               <a
                 class="nav-link"
@@ -547,6 +553,198 @@
                 </div>
               </div>
             </div>
+
+            <!-- TAB: Nạp tiền / Rút tiền / Lịch sử -->
+            <div class="tab-pane fade" id="nap-tien">
+              <!-- Số dư nổi bật -->
+              <div class="wallet-hero mb-4">
+                <div class="wallet-hero-left">
+                  <div class="wallet-icon-wrap">
+                    <i class="fa-solid fa-wallet fa-lg"></i>
+                  </div>
+                  <div>
+                    <div class="wallet-label">Số dư hiện tại</div>
+                    <div class="wallet-amount">{{ formatMoney(soDu) }}</div>
+                  </div>
+                </div>
+                <button class="btn btn-light btn-sm" @click="loadSoDu" :disabled="loadingSoDu">
+                  <span v-if="loadingSoDu" class="spinner-border spinner-border-sm"></span>
+                  <i v-else class="fa-solid fa-rotate-right"></i>
+                </button>
+              </div>
+
+              <!-- Sub-tabs -->
+              <ul class="nav nav-pills wallet-tabs mb-4">
+                <li class="nav-item">
+                  <a class="nav-link active" data-bs-toggle="pill" href="#tab-nap">
+                    <i class="fa-solid fa-circle-plus me-2"></i>Nạp tiền
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" data-bs-toggle="pill" href="#tab-rut">
+                    <i class="fa-solid fa-circle-minus me-2"></i>Rút tiền
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" data-bs-toggle="pill" href="#tab-lich-su" @click.once="loadLichSu">
+                    <i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch sử
+                  </a>
+                </li>
+              </ul>
+
+              <div class="tab-content">
+                <!-- Nạp tiền -->
+                <div class="tab-pane fade show active" id="tab-nap">
+                  <div class="card inner-card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                      <h5 class="fw-bold mb-4"><i class="fa-solid fa-circle-plus me-2 text-success"></i>Nạp tiền vào ví</h5>
+                      <form @submit.prevent="napTien">
+                        <div class="row g-3">
+                          <div class="col-md-6">
+                            <label class="form-label">Số tiền nạp (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" v-model.number="napData.so_tien" placeholder="Nhập số tiền" min="10000" step="1000" required />
+                            <div class="quick-amounts mt-2">
+                              <button type="button" class="quick-btn" v-for="amt in quickAmounts" :key="amt" @click="napData.so_tien = amt">{{ formatMoney(amt) }}</button>
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Phương thức thanh toán <span class="text-danger">*</span></label>
+                            <select class="form-select" v-model="napData.phuong_thuc" required>
+                              <option value="">-- Chọn phương thức --</option>
+                              <option value="vnpay">VNPay</option>
+                              <option value="momo">MoMo</option>
+                              <option value="banking">Chuyển khoản ngân hàng</option>
+                            </select>
+                          </div>
+                          <div class="col-12">
+                            <label class="form-label">Ghi chú</label>
+                            <input type="text" class="form-control" v-model="napData.ghi_chu" placeholder="Ghi chú (tuỳ chọn)" />
+                          </div>
+                        </div>
+                        <div class="text-end mt-4 pt-3 border-top">
+                          <button type="button" class="btn btn-light me-2 px-4" @click="napData = { so_tien: '', phuong_thuc: '', ghi_chu: '' }">Huỷ</button>
+                          <button type="submit" class="btn btn-success-custom px-5" :disabled="isNapTien">
+                            <span v-if="isNapTien" class="spinner-border spinner-border-sm me-2"></span>
+                            <i v-else class="fa-solid fa-circle-plus me-2"></i>Nạp tiền
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Rút tiền -->
+                <div class="tab-pane fade" id="tab-rut">
+                  <div class="card inner-card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                      <h5 class="fw-bold mb-4"><i class="fa-solid fa-circle-minus me-2 text-danger"></i>Rút tiền về tài khoản</h5>
+                      <form @submit.prevent="rutTien">
+                        <div class="row g-3">
+                          <div class="col-md-6">
+                            <label class="form-label">Số tiền rút (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" v-model.number="rutData.so_tien" :placeholder="'Tối đa ' + formatMoney(soDu)" min="50000" step="1000" :max="soDu" required />
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Ngân hàng <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" v-model="rutData.ten_ngan_hang" placeholder="Tên ngân hàng" required />
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Số tài khoản <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" v-model="rutData.so_tai_khoan" placeholder="Số tài khoản ngân hàng" required />
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Tên chủ tài khoản <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" v-model="rutData.chu_tai_khoan" placeholder="Tên chủ tài khoản" required />
+                          </div>
+                          <div class="col-12">
+                            <label class="form-label">Ghi chú</label>
+                            <input type="text" class="form-control" v-model="rutData.ghi_chu" placeholder="Ghi chú (tuỳ chọn)" />
+                          </div>
+                        </div>
+                        <div class="rut-warning mt-3">
+                          <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                          Yêu cầu rút tiền sẽ được xử lý trong vòng 1-3 ngày làm việc.
+                        </div>
+                        <div class="text-end mt-4 pt-3 border-top">
+                          <button type="button" class="btn btn-light me-2 px-4" @click="resetRutForm">Huỷ</button>
+                          <button type="submit" class="btn btn-danger-custom px-5" :disabled="isRutTien">
+                            <span v-if="isRutTien" class="spinner-border spinner-border-sm me-2"></span>
+                            <i v-else class="fa-solid fa-circle-minus me-2"></i>Gửi yêu cầu rút
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Lịch sử giao dịch -->
+                <div class="tab-pane fade" id="tab-lich-su">
+                  <div class="card inner-card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                      <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Lịch sử giao dịch</h5>
+                        <button class="btn btn-light btn-sm" @click="loadLichSu" :disabled="loadingLichSu">
+                          <span v-if="loadingLichSu" class="spinner-border spinner-border-sm"></span>
+                          <i v-else class="fa-solid fa-rotate-right"></i> Làm mới
+                        </button>
+                      </div>
+
+                      <!-- Filter -->
+                      <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                          <select class="form-select" v-model="filterLoai" @change="loadLichSu">
+                            <option value="">Tất cả loại</option>
+                            <option value="nap">Nạp tiền</option>
+                            <option value="rut">Rút tiền</option>
+                            <option value="thanh_toan">Thanh toán</option>
+                            <option value="hoan_tien">Hoàn tiền</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div v-if="loadingLichSu" class="text-center py-5">
+                        <span class="spinner-border text-primary"></span>
+                        <p class="text-muted mt-2 small">Đang tải...</p>
+                      </div>
+
+                      <div v-else-if="lichSuGD.length === 0" class="empty-state">
+                        <i class="fa-solid fa-receipt fa-3x mb-3 text-muted"></i>
+                        <p class="text-muted mb-0">Chưa có giao dịch nào</p>
+                      </div>
+
+                      <div v-else>
+                        <div class="gd-item" v-for="gd in lichSuGD" :key="gd.id">
+                          <div class="gd-icon" :class="gdIconClass(gd.loai)">
+                            <i :class="gdIcon(gd.loai)"></i>
+                          </div>
+                          <div class="gd-info">
+                            <div class="gd-mo-ta">{{ gd.mo_ta || loaiLabel(gd.loai) }}</div>
+                            <div class="gd-time">{{ gd.created_at }}</div>
+                          </div>
+                          <div class="gd-right">
+                            <div class="gd-so-tien" :class="gd.loai === 'nap' || gd.loai === 'hoan_tien' ? 'text-success' : 'text-danger'">
+                              {{ gd.loai === 'nap' || gd.loai === 'hoan_tien' ? '+' : '-' }}{{ formatMoney(gd.so_tien) }}
+                            </div>
+                            <span class="gd-status" :class="statusClass(gd.trang_thai)">{{ statusLabel(gd.trang_thai) }}</span>
+                          </div>
+                        </div>
+
+                        <!-- Phân trang -->
+                        <div class="d-flex justify-content-center mt-4" v-if="lichSuMeta.last_page > 1">
+                          <button class="btn btn-light btn-sm me-2" :disabled="lichSuMeta.current_page === 1" @click="changePage(lichSuMeta.current_page - 1)">
+                            <i class="fa-solid fa-chevron-left"></i>
+                          </button>
+                          <span class="align-self-center text-muted small">Trang {{ lichSuMeta.current_page }} / {{ lichSuMeta.last_page }}</span>
+                          <button class="btn btn-light btn-sm ms-2" :disabled="lichSuMeta.current_page === lichSuMeta.last_page" @click="changePage(lichSuMeta.current_page + 1)">
+                            <i class="fa-solid fa-chevron-right"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -743,6 +941,20 @@ export default {
       hoSoLoaded: false,
       showTeacherProfileModal: false,
       isFetchingHoSo: false,
+
+      // Ví & Giao dịch
+      soDu: 0,
+      loadingSoDu: false,
+      napData: { so_tien: "", phuong_thuc: "", ghi_chu: "" },
+      isNapTien: false,
+      rutData: { so_tien: "", ten_ngan_hang: "", so_tai_khoan: "", chu_tai_khoan: "", ghi_chu: "" },
+      isRutTien: false,
+      lichSuGD: [],
+      lichSuMeta: { current_page: 1, last_page: 1 },
+      loadingLichSu: false,
+      filterLoai: "",
+      currentPage: 1,
+      quickAmounts: [50000, 100000, 200000, 500000],
     };
   },
   mounted() {
@@ -1147,6 +1359,149 @@ export default {
       this.showNewPassword = false;
       this.showConfirmPassword = false;
     },
+    // ===== VÍ & GIAO DỊCH =====
+    formatMoney(val) {
+      return Number(val || 0).toLocaleString("vi-VN") + " ₫";
+    },
+    async loadSoDu() {
+      this.loadingSoDu = true;
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/vi/so-du", {
+          headers: { Authorization: "Bearer " + this.getAuthToken() },
+        });
+        if (res.data.status) this.soDu = res.data.so_du || 0;
+      } catch {
+        // Bỏ qua lỗi
+      } finally {
+        this.loadingSoDu = false;
+      }
+    },
+    async napTien() {
+      if (!this.napData.so_tien || this.napData.so_tien < 10000) {
+        this.$toast.error("Số tiền nạp tối thiểu là 10.000 ₫");
+        return;
+      }
+      this.isNapTien = true;
+      try {
+        const res = await axios.post(
+          "http://127.0.0.1:8000/api/vi/nap-tien",
+          this.napData,
+          { headers: { Authorization: "Bearer " + this.getAuthToken() } }
+        );
+        if (res.data.status) {
+          this.$toast.success(res.data.message || "Yêu cầu nạp tiền đã được ghi nhận!");
+          this.napData = { so_tien: "", phuong_thuc: "", ghi_chu: "" };
+          this.loadSoDu();
+        } else {
+          this.$toast.error(res.data.message || "Không thể thực hiện nạp tiền.");
+        }
+      } catch (err) {
+        this.$toast.error(err.response?.data?.message || "Lỗi khi nạp tiền.");
+      } finally {
+        this.isNapTien = false;
+      }
+    },
+    async rutTien() {
+      if (!this.rutData.so_tien || this.rutData.so_tien < 50000) {
+        this.$toast.error("Số tiền rút tối thiểu là 50.000 ₫");
+        return;
+      }
+      if (this.rutData.so_tien > this.soDu) {
+        this.$toast.error("Số tiền rút vượt quá số dư trong ví.");
+        return;
+      }
+      this.isRutTien = true;
+      try {
+        const res = await axios.post(
+          "http://127.0.0.1:8000/api/vi/rut-tien",
+          this.rutData,
+          { headers: { Authorization: "Bearer " + this.getAuthToken() } }
+        );
+        if (res.data.status) {
+          this.$toast.success(res.data.message || "Yêu cầu rút tiền đã được ghi nhận!");
+          this.resetRutForm();
+          this.loadSoDu();
+        } else {
+          this.$toast.error(res.data.message || "Không thể thực hiện rút tiền.");
+        }
+      } catch (err) {
+        this.$toast.error(err.response?.data?.message || "Lỗi khi rút tiền.");
+      } finally {
+        this.isRutTien = false;
+      }
+    },
+    resetRutForm() {
+      this.rutData = { so_tien: "", ten_ngan_hang: "", so_tai_khoan: "", chu_tai_khoan: "", ghi_chu: "" };
+    },
+    async loadLichSu() {
+      this.loadingLichSu = true;
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/vi/lich-su", {
+          params: { loai: this.filterLoai || undefined, page: this.currentPage },
+          headers: { Authorization: "Bearer " + this.getAuthToken() },
+        });
+        if (res.data.status) {
+          this.lichSuGD = res.data.data || [];
+          this.lichSuMeta = {
+            current_page: res.data.current_page || 1,
+            last_page: res.data.last_page || 1,
+          };
+        }
+      } catch {
+        this.lichSuGD = [];
+      } finally {
+        this.loadingLichSu = false;
+      }
+    },
+    changePage(page) {
+      this.currentPage = page;
+      this.loadLichSu();
+    },
+    gdIcon(loai) {
+      const map = {
+        nap: "fa-solid fa-circle-plus",
+        rut: "fa-solid fa-circle-minus",
+        thanh_toan: "fa-solid fa-cart-shopping",
+        hoan_tien: "fa-solid fa-rotate-left",
+      };
+      return map[loai] || "fa-solid fa-circle-dot";
+    },
+    gdIconClass(loai) {
+      const map = {
+        nap: "gd-icon-nap",
+        rut: "gd-icon-rut",
+        thanh_toan: "gd-icon-thanh-toan",
+        hoan_tien: "gd-icon-hoan",
+      };
+      return map[loai] || "";
+    },
+    loaiLabel(loai) {
+      const map = {
+        nap: "Nạp tiền",
+        rut: "Rút tiền",
+        thanh_toan: "Thanh toán",
+        hoan_tien: "Hoàn tiền",
+      };
+      return map[loai] || loai;
+    },
+    statusLabel(tt) {
+      const map = {
+        cho_xu_ly: "Chờ xử lý",
+        thanh_cong: "Thành công",
+        that_bai: "Thất bại",
+        da_huy: "Đã huỷ",
+      };
+      return map[tt] || tt;
+    },
+    statusClass(tt) {
+      const map = {
+        cho_xu_ly: "status-pending",
+        thanh_cong: "status-success",
+        that_bai: "status-fail",
+        da_huy: "status-cancel",
+      };
+      return map[tt] || "";
+    },
   },
   watch: {
     avatarDisplayUrl() {
@@ -1310,6 +1665,13 @@ export default {
   background-color: #f1f5f9 !important;
   cursor: not-allowed;
   opacity: 0.8;
+}
+
+/* Không áp dụng padding custom cho select - để trình duyệt render đúng */
+select.form-control {
+  padding: 0.375rem 0.75rem;
+  appearance: auto;
+  -webkit-appearance: auto;
 }
 
 /* Buttons */
@@ -1559,5 +1921,192 @@ export default {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* ===== WALLET & GIAO DỊCH ===== */
+.wallet-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+}
+.wallet-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.wallet-icon-wrap {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+.wallet-label {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.wallet-amount {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Sub-tabs ví */
+.wallet-tabs {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 6px;
+  gap: 6px;
+}
+.wallet-tabs .nav-link {
+  color: #64748b;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: none;
+  transition: all 0.25s ease;
+}
+.wallet-tabs .nav-link:hover:not(.active) {
+  background: #e2e8f0;
+  color: #334155;
+}
+.wallet-tabs .nav-link.active {
+  background: #fff;
+  color: #667eea;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Quick amount buttons */
+.quick-amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.quick-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.quick-btn:hover {
+  background: #667eea;
+  color: #fff;
+  border-color: #667eea;
+}
+
+/* Nút nạp/rút */
+.btn-success-custom {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 10px 20px;
+  transition: all 0.3s;
+}
+.btn-success-custom:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(34,197,94,0.35);
+  color: #fff;
+}
+.btn-danger-custom {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 10px 20px;
+  transition: all 0.3s;
+}
+.btn-danger-custom:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(239,68,68,0.35);
+  color: #fff;
+}
+
+/* Cảnh báo rút tiền */
+.rut-warning {
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: #854d0e;
+}
+
+/* Giao dịch items */
+.gd-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.gd-item:last-child { border-bottom: none; }
+.gd-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.gd-icon-nap    { background: #dcfce7; color: #16a34a; }
+.gd-icon-rut    { background: #fee2e2; color: #dc2626; }
+.gd-icon-thanh-toan { background: #ede9fe; color: #7c3aed; }
+.gd-icon-hoan   { background: #dbeafe; color: #2563eb; }
+
+.gd-info { flex: 1; min-width: 0; }
+.gd-mo-ta {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gd-time {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.gd-right { text-align: right; flex-shrink: 0; }
+.gd-so-tien {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.gd-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 2px 10px;
+  margin-top: 4px;
+  display: inline-block;
+}
+.status-pending  { background: #fef9c3; color: #854d0e; }
+.status-success  { background: #dcfce7; color: #166534; }
+.status-fail     { background: #fee2e2; color: #991b1b; }
+.status-cancel   { background: #f1f5f9; color: #475569; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
 }
 </style>
