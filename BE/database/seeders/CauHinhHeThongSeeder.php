@@ -33,6 +33,9 @@ class CauHinhHeThongSeeder extends Seeder
                 'is_active' => false,
                 'message' => 'Hệ thống đang tiến hành nâng cấp AI. Việc chấm điểm phát âm có thể chậm hơn bình thường 1-2 giây.',
             ],
+            'ti_le_hoa_hong_platform' => [
+                'phan_tram' => 20,
+            ],
         ];
 
         foreach ($items as $maCauHinh => $duLieu) {

@@ -26,7 +26,8 @@ class DatabaseSeeder extends Seeder
             QuanHeGvHvSeeder::class,
             GoiYLuyenTapSeeder::class,
             LoTrinhCaNhanSeeder::class,
-            ChiTieLoTrinhSeeder::class,
+            ChiTietLoTrinhSeeder::class,
+            BasicLoTrinhForExistingUsersSeeder::class,
             PhienLuyenTapSeeder::class,
             ChiTietLuyenTapSeeder::class,
             DiemDanhLoiSeeder::class,
@@ -34,6 +35,9 @@ class DatabaseSeeder extends Seeder
             LichSuLoiPhatAmSeeder::class,
             CauHinhHeThongSeeder::class,
             BannerSeeder::class,
+            ViSeeder::class,
+            GoiPremiumSeeder::class,
+            LoTrinhTraPhiSeeder::class,
         ]);
     }
 }

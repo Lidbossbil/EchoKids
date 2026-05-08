@@ -11,41 +11,23 @@ class LoTrinhCaNhanSeeder extends Seeder
     public function run(): void
     {
         $now = Carbon::now();
-
-        $loTrinhCaNhans = [
-            [
-                'id' => 1,
-                'hoc_vien_id' => 4, // Phạm Thị Học (học viên)
-                'giao_vien_id' => 2, // Trần Thị Giáo Viên (giáo viên)
-                'ten_lo_trinh' => 'Lộ trình Tiếng Anh cơ bản',
-                'ngay_tao' => $now->toDateString(),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'id' => 2,
-                'hoc_vien_id' => 5, // Ngô Văn Học (học viên)
-                'giao_vien_id' => 3, // Lê Văn Dạy (giáo viên)
-                'ten_lo_trinh' => 'Lộ trình Phát âm nâng cao',
-                'ngay_tao' => $now->copy()->subDays(7)->toDateString(),
-                'created_at' => $now->copy()->subDays(7),
-                'updated_at' => $now->copy()->subDays(7),
-            ],
-            [
-                'id' => 3,
-                'hoc_vien_id' => 7, // Đặng Minh Học (học viên)
-                'giao_vien_id' => 2, // Trần Thị Giáo Viên (giáo viên)
-                'ten_lo_trinh' => 'Lộ trình Từ vựng cho trẻ em',
-                'ngay_tao' => $now->copy()->subDays(30)->toDateString(),
-                'created_at' => $now->copy()->subDays(30),
-                'updated_at' => $now->copy()->subDays(30),
-            ],
+        $data = [];
+        // Gán thêm lộ trình mặc định cho TOÀN BỘ học viên từ 4-10
+        foreach (range(4, 10) as $id) {
+            $data[] = [
+                'hoc_vien_id'  => $id,
+                'giao_vien_id' => 2,
+                'ten_lo_trinh' => 'Lộ trình cơ bản',
+                'ngay_tao'     => $now,
+                'created_at'   => $now,
+                'updated_at'   => $now,
+            ];
+        }
+        $ca_nhan = [
+            ['hoc_vien_id' => 4, 'giao_vien_id' => 2, 'ten_lo_trinh' => 'Lộ trình đồ dùng cơ bản', 'ngay_tao' => $now, 'created_at' => $now, 'updated_at' => $now],
+            ['hoc_vien_id' => 5, 'giao_vien_id' => 3, 'ten_lo_trinh' => 'Lộ trình Phát âm nâng cao', 'ngay_tao' => $now, 'created_at' => $now, 'updated_at' => $now],
         ];
-
-        DB::table('lo_trinh_ca_nhans')->upsert(
-            $loTrinhCaNhans,
-            ['id'],
-            ['hoc_vien_id', 'giao_vien_id', 'ten_lo_trinh', 'ngay_tao', 'updated_at']
-        );
+        $data = array_merge($data, $ca_nhan);
+        DB::table('lo_trinh_ca_nhans')->insert($data);
     }
 }
