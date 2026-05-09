@@ -18,7 +18,7 @@
                                 <i class="fa-solid fa-sliders me-2 w-20px text-center"></i> Cấu hình chung
                             </button>
                             
-                            <button class="nav-link text-start px-3 py-3 mb-2 fw-semibold rounded-3" id="ai-tab" data-bs-toggle="pill" data-bs-target="#ai-pane" type="button" role="tab">
+                            <button class="nav-link text-start px-3 py-3 mb-2 fw-semibold rounded-3" id="ai-tab" data-bs-toggle="pill" data-bs-target="#ai-pane" type="button" role="tab" @click="taiCauHinhAI">
                                 <i class="fa-solid fa-microchip me-2 w-20px text-center"></i> Cấu hình AI & API
                             </button>
                             
@@ -50,13 +50,8 @@
                                             </div>
                                             <div>
                                                 <h6 class="fw-bold mb-1">Logo Hệ Thống</h6>
-                                                <!-- <input type="text" class="form-control form-control-sm shadow-none"
-                                                    v-model="general.logo_icon" placeholder="VD: fa fa-book-reader me-3"> -->
-                                                <input ref="logoInput" type="file" class="form-control form-control-sm shadow-none mt-2"
-                                                    accept="image/png,image/jpeg,image/webp" @change="chonLogoTuMay" :disabled="isUploadingLogo">
-                                                <small class="text-muted d-block mt-2" v-if="isUploadingLogo">Đang tải logo lên Cloudinary...</small>
-                                                <input type="text" class="form-control form-control-sm shadow-none mt-2"
-                                                    v-model="general.logo_url" placeholder="Hoặc URL logo ảnh (nếu có)">
+                                                <input type="file" class="form-control form-control-sm shadow-none mt-2"
+                                                    accept="image/png,image/jpeg,image/webp" @change="chonLogoTuMay">
                                             </div>
                                         </div>
 
@@ -127,7 +122,7 @@
                                                 <div class="progress flex-grow-1 me-3" style="height: 10px;">
                                                     <div class="progress-bar" :class="usagePercentage > 80 ? 'bg-danger' : 'bg-success'" :style="{ width: usagePercentage + '%' }"></div>
                                                 </div>
-                                                <span class="fw-bold small">{{ api.speech_to_text.current_usage }} / {{ api.speech_to_text.monthly_limit }}</span>
+                                                <span class="fw-bold small">{{ formatNumber(api.speech_to_text.current_usage) }} / {{ formatNumber(api.speech_to_text.monthly_limit) }}</span>
                                             </div>
                                         </div>
 
@@ -221,6 +216,7 @@ import axios from "axios";
 export default {
     data() {
         return {
+            apiBase: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000",
             // Data cấu hình chung
             general: {
                 logo_url: null,
@@ -254,6 +250,9 @@ export default {
             isLoading: false,
             isUploadingLogo: false,
             localLogoPreviewUrl: '',
+            isLoadingAi: false,
+            isSavingAi: false,
+            aiLoaded: false,
         }
     },
     watch: {
@@ -277,6 +276,10 @@ export default {
         }
     },
     methods: {
+        formatNumber(value) {
+            const number = Number(value || 0);
+            return Number.isFinite(number) ? number.toLocaleString('vi-VN') : '0';
+        },
         authHeaders() {
             return {
                 Authorization: "Bearer " + (localStorage.getItem("token_admin") || "")
@@ -301,10 +304,10 @@ export default {
         taiDuLieuCauHinh() {
             this.isLoading = true;
             Promise.all([
-                axios.get("http://127.0.0.1:8000/api/admin/cau-hinh/chung/data", { headers: this.authHeaders() }),
-                axios.get("http://127.0.0.1:8000/api/admin/cau-hinh/ai/data", { headers: this.authHeaders() }),
-                axios.get("http://127.0.0.1:8000/api/admin/cau-hinh/thong-bao/data", { headers: this.authHeaders() }),
-                axios.get("http://127.0.0.1:8000/api/admin/cau-hinh/banners/data", { headers: this.authHeaders() }),
+                axios.get(this.apiBase + "/api/admin/cau-hinh/chung/data", { headers: this.authHeaders() }),
+                axios.get(this.apiBase + "/api/admin/cau-hinh/ai/data", { headers: this.authHeaders() }),
+                axios.get(this.apiBase + "/api/admin/cau-hinh/thong-bao/data", { headers: this.authHeaders() }),
+                axios.get(this.apiBase + "/api/admin/cau-hinh/banners/data", { headers: this.authHeaders() }),
             ])
                 .then(([generalRes, aiRes, alertRes, bannerRes]) => {
                     if (generalRes.data.status) {
@@ -312,6 +315,7 @@ export default {
                     }
                     if (aiRes.data.status) {
                         this.api = { ...this.api, ...(aiRes.data.data || {}) };
+                        this.aiLoaded = true;
                     }
                     if (alertRes.data.status) {
                         this.alert = { ...this.alert, ...(alertRes.data.data || {}) };
@@ -327,19 +331,46 @@ export default {
                     this.isLoading = false;
                 });
         },
+        taiCauHinhAI(forceReload = false) {
+            if (this.isLoadingAi) return;
+            if (this.aiLoaded && !forceReload) return;
+
+            this.isLoadingAi = true;
+            axios
+                .get(this.apiBase + "/api/admin/cau-hinh/ai/data", {
+                    headers: this.authHeaders()
+                })
+                .then((res) => {
+                    if (res.data.status) {
+                        this.api = { ...this.api, ...(res.data.data || {}) };
+                        this.aiLoaded = true;
+                    } else {
+                        this.$toast.error(res.data.message || "Không thể tải cấu hình AI/API");
+                    }
+                })
+                .catch((err) => {
+                    this.xuLyLoiAxios(err, "Không thể tải cấu hình AI/API");
+                })
+                .finally(() => {
+                    this.isLoadingAi = false;
+                });
+        },
         saveGeneralSettings() {
             const payload = {
                 ...this.general,
                 logo_icon: this.general.logo_url ? '' : this.general.logo_icon,
             };
             axios
-                .post("http://127.0.0.1:8000/api/admin/cau-hinh/chung/update", payload, {
+                .post(this.apiBase + "/api/admin/cau-hinh/chung/update", payload, {
                     headers: this.authHeaders()
                 })
                 .then((res) => {
                     if (res.data.status) {
                         this.general = { ...this.general, ...(res.data.data || {}) };
                         this.$toast.success(res.data.message || "Đã lưu cấu hình chung");
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
                     } else {
                         this.$toast.error(res.data.message || "Không thể lưu cấu hình chung");
                     }
@@ -349,13 +380,16 @@ export default {
                 });
         },
         saveApiSettings() {
+            if (this.isSavingAi) return;
+            this.isSavingAi = true;
             axios
-                .put("http://127.0.0.1:8000/api/admin/cau-hinh/ai/update", this.api, {
+                .put(this.apiBase + "/api/admin/cau-hinh/ai/update", this.api, {
                     headers: this.authHeaders()
                 })
                 .then((res) => {
                     if (res.data.status) {
                         this.api = { ...this.api, ...(res.data.data || {}) };
+                        this.aiLoaded = true;
                         this.$toast.success(res.data.message || "Đã cập nhật cấu hình AI/API");
                     } else {
                         this.$toast.error(res.data.message || "Không thể cập nhật cấu hình AI/API");
@@ -363,11 +397,14 @@ export default {
                 })
                 .catch((err) => {
                     this.xuLyLoiAxios(err, "Có lỗi xảy ra khi cập nhật cấu hình AI/API");
+                })
+                .finally(() => {
+                    this.isSavingAi = false;
                 });
         },
         saveAlert() {
             axios
-                .put("http://127.0.0.1:8000/api/admin/cau-hinh/thong-bao/update", this.alert, {
+                .put(this.apiBase + "/api/admin/cau-hinh/thong-bao/update", this.alert, {
                     headers: this.authHeaders()
                 })
                 .then((res) => {
@@ -388,7 +425,7 @@ export default {
                 is_active: false,
             };
             axios
-                .put("http://127.0.0.1:8000/api/admin/cau-hinh/thong-bao/update", payload, {
+                .put(this.apiBase + "/api/admin/cau-hinh/thong-bao/update", payload, {
                     headers: this.authHeaders()
                 })
                 .then((res) => {
@@ -478,7 +515,7 @@ export default {
             const link = window.prompt("Nhập link điều hướng (có thể để trống):") || null;
 
             axios
-                .post("http://127.0.0.1:8000/api/admin/cau-hinh/banners/create", {
+                .post(this.apiBase + "/api/admin/cau-hinh/banners/create", {
                     image,
                     link,
                     is_active: true,
@@ -513,7 +550,7 @@ export default {
         },
         doiTrangThaiBanner(banner) {
             axios
-                .patch(`http://127.0.0.1:8000/api/admin/cau-hinh/banners/update/${banner.id}`, {
+                .patch(`${this.apiBase}/api/admin/cau-hinh/banners/update/${banner.id}`, {
                     is_active: !!banner.is_active
                 }, {
                     headers: this.authHeaders()
@@ -531,7 +568,7 @@ export default {
         },
         xoaBanner(banner) {
             axios
-                .delete(`http://127.0.0.1:8000/api/admin/cau-hinh/banners/delete/${banner.id}`, {
+                .delete(`${this.apiBase}/api/admin/cau-hinh/banners/delete/${banner.id}`, {
                     headers: this.authHeaders()
                 })
                 .then((res) => {
