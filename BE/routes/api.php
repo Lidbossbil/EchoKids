@@ -89,6 +89,7 @@ Route::prefix('/admin')->group(function () {
     Route::prefix('/cau-hinh')->group(function () {
         Route::get('/chung/data', [CauHinhController::class, 'getGeneralSettings']);
         Route::post('/chung/update', [CauHinhController::class, 'updateGeneralSettings']);
+        Route::post('/chung/update-logo', [CauHinhController::class, 'updateGeneralLogo']);
 
         Route::get('/ai/data', [CauHinhController::class, 'getAiSettings']);
         Route::put('/ai/update', [CauHinhController::class, 'updateAiSettings']);
