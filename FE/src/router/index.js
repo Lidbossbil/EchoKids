@@ -52,12 +52,6 @@ const routes = [
     beforeEnter: checkClient,
   },
   {
-    path: "/on-tap-loi",
-    component: () => import("../components/Client/OnTapLoiSai/index.vue"),
-    meta: { layout: "blank" },
-    beforeEnter: checkClient,
-  },
-  {
     path: "/dang-ky-giao-vien",
     component: () => import("../components/Client/DangKyGiaoVien/index.vue"),
     meta: { layout: "client" },
