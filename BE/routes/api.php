@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminDepositController;
 use App\Http\Controllers\BaiHocController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\CauHinhController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\TrangChuController;
 use App\Http\Controllers\TtsController;
 use App\Http\Controllers\VaiTroController;
 use App\Http\Controllers\VaiTroQuyenController;
+use App\Http\Controllers\ViController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -122,6 +124,12 @@ Route::prefix('/admin')->group(function () {
         Route::patch('/banners/update/{id}', [CauHinhController::class, 'update']);
         Route::delete('/banners/delete/{id}', [CauHinhController::class, 'destroy']);
     });
+
+    Route::prefix('/deposits')->middleware(['auth:sanctum', 'role:1'])->group(function () {
+        Route::get('/', [AdminDepositController::class, 'index']);
+        Route::post('/{id}/confirm', [AdminDepositController::class, 'confirm']);
+        Route::post('/{id}/reject', [AdminDepositController::class, 'reject']);
+    });
 });
 
 Route::get('/cau-hinh/footer/data', [CauHinhController::class, 'getFooterSettings']);
@@ -212,19 +220,37 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chat/system/session', [ChatBoxAIController::class, 'session']);
     Route::post('/chat/system', [ChatBoxAIController::class, 'chatSystem']);
     Route::get('/chat/system/history', [ChatBoxAIController::class, 'history']);
+    Route::get('/chat/system/greeting', [ChatBoxAIController::class, 'greeting']);
     route::prefix('/tien-do-bai-hoc')->group(function () {
         Route::get('/tong-quan', [TienDoBaiHocController::class, 'tongQuan']);
     });
 
     Route::post('/cham-diem-phat-am', [ChiTietLuyenTapController::class, 'chamDiemPhatAm']);
+
+    Route::prefix('/deposit')->group(function () {
+        Route::post('/create', [DepositController::class, 'create']);
+        Route::get('/history', [DepositController::class, 'history']);
+    });
+
+    Route::prefix('/vi')->group(function () {
+        Route::get('/so-du', [ViController::class, 'soDu']);
+        Route::post('/nap-tien', [ViController::class, 'napTien']);
+        Route::get('/nap-tien/{maDon}/trang-thai', [ViController::class, 'napTienTrangThai']);
+        Route::post('/nap-tien/{maDon}/sau-quet-ma', [ViController::class, 'napTienSauQuetMa']);
+        Route::post('/nap-tien/{maDon}/xac-nhan-thanh-cong', [ViController::class, 'napTienXacNhanThanhCong']);
+        Route::post('/rut-tien', [ViController::class, 'rutTien']);
+        Route::get('/lich-su', [ViController::class, 'lichSu']);
+    });
 });
 
 Route::prefix('/homepage')->group(function () {
     Route::get('/data-open', [HomeController::class, 'dataOpen']);
 
     // Hồ sơ đăng ký giáo viên (Client)
-    Route::post('/ho-so-giao-vien', [HoSoGiaoVienController::class, 'store']);
-    Route::get('/ho-so-giao-vien/my-status', [HoSoGiaoVienController::class, 'myStatus']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/ho-so-giao-vien', [HoSoGiaoVienController::class, 'store']);
+        Route::get('/ho-so-giao-vien/my-status', [HoSoGiaoVienController::class, 'myStatus']);
+    });
 });
 
 Route::prefix('/danh-muc-bai-hoc')->group(function () {

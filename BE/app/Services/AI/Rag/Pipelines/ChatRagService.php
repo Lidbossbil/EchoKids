@@ -28,8 +28,7 @@ class ChatRagService
         private readonly StudentMessagingTools $studentMessagingTools,
         private readonly ToolPlanService $toolPlanService,
         private readonly RoleRagKnowledgeService $roleRagKnowledgeService,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -332,7 +331,7 @@ class ChatRagService
                 'action_label' => null,
             ];
         }
-        if (str_contains($normalized, 'loa')) {
+        if (preg_match('/\bloa\b/u', $normalized) === 1) {
             return [
                 'message' => 'Con kiểm tra âm lượng loa của máy trước, rồi tăng âm trong trình duyệt lên giúp cô nhé.',
                 'action_url' => null,
@@ -355,7 +354,8 @@ class ChatRagService
                 : 'Hiện cô đang ở chế độ hỗ trợ nhanh. Con vào mục Tiến độ để xem điểm gần nhất nhé, rồi cô phân tích tiếp cho con.',
             'ask_mistake' => 'Mình luyện chậm từng âm tiết nhé. Con gửi cho cô 1 câu con hay đọc sai, cô sẽ hướng dẫn sửa từng bước.',
             'ask_lesson' => 'Con vào mục Bài học, chọn bài mức dễ trước rồi gửi tên bài cho cô, cô sẽ gợi ý cách luyện nhanh nhất.',
-            'ask_pronunciation' => 'Con đọc chậm từng âm giúp cô nhé. Ví dụ với "Apple": /ˈæp.əl/, con tách 2 nhịp "ap" - "ple" rồi đọc liền lại.',
+            'ask_phonics_path' => 'Cô gợi ý con bắt đầu từ nguyên âm đơn (/a/, /e/, /i/, /o/, /u/) trước nhé, sau đó mới đến phụ âm đơn rồi âm ghép. Luyện theo thứ tự từng nhóm giúp con chắc nền hơn nhiều đó.',
+            'ask_pronunciation' => 'Con đọc chậm từng âm tiết giúp cô nhé. Ví dụ từ "nghưỡng": âm đầu "ng" + vần "ưỡng" + thanh sắc, con tách ra rồi ghép lại từng bước.',
             'ask_lesson_switch' => 'Được con nha. Mình đổi sang bài dễ hơn để lấy lại tự tin trước, rồi cô nâng độ khó dần cho con.',
             'ask_parent_report' => 'Phụ huynh vào mục Tiến độ để xem số câu đã luyện và điểm gần đây của bé nhé. Cần thì cô sẽ tóm tắt nhanh theo ngày.',
             'motivation_low' => 'Không sao đâu con, mình nghỉ 2-3 phút rồi quay lại 1 câu thật ngắn nhé. Cô ở đây hỗ trợ con từng bước.',
@@ -385,7 +385,7 @@ class ChatRagService
             return 'Con vào trang Bài học, chọn bài phù hợp rồi nói cô biết tên bài để cô hướng dẫn cách luyện.';
         }
 
-        return 'Cô đang hỗ trợ ở chế độ nhanh. Con hỏi ngắn gọn theo 1 trong 3 hướng nhé: điểm, lỗi phát âm, hoặc bài nên học tiếp.';
+        return 'Cô chỉ là trợ lý nên chỉ có thể trả lời những gì liên quan đế Echokids không thể trả lời câu hỏi này của con được. Bù lại, cô có thể hướng dẫn con bài học luyện phát âm hôm nay, bài tập luyện âm đầu phù hợp nhất cho ngày hôm nay.';
     }
 
     private function resolveAssistantRole(NguoiDung $user): string
@@ -550,6 +550,12 @@ class ChatRagService
             || str_contains($normalized, 'nen hoc bai gi')
             || str_contains($normalized, 'hoc bai gi')
             || str_contains($normalized, 'bai hoc tiep')
+            || str_contains($normalized, 'bai hoc hom nay')
+            || str_contains($normalized, 'goi y hom nay')
+            || str_contains($normalized, 'bai phu hop hom nay')
+            || str_contains($normalized, 'nen hoc gi hom nay')
+            || str_contains($normalized, 'bai nao phu hop')
+            || str_contains($normalized, 'de xuat bai')
         ) {
             return $pick('student_get_suggested_lessons_by_level', ['days' => min($days, 30), 'limit' => $limit]);
         }
@@ -580,6 +586,28 @@ class ChatRagService
             || str_contains($normalized, 'diem cao nhat')
         ) {
             return $pick('student_get_personal_dashboard_data', ['days' => $days]);
+        }
+
+        if (
+            str_contains($normalized, 'phat am chu')
+            || str_contains($normalized, 'phat am tu')
+            || str_contains($normalized, 'chu nay doc')
+            || str_contains($normalized, 'tu nay doc')
+            || str_contains($normalized, 'doc la gi')
+            || str_contains($normalized, 'doc sao')
+        ) {
+            $query = '';
+            // Match from the original message to preserve diacritics
+            if (preg_match('/(?:chữ|từ)\s+([^\s?]+)/iu', $message, $m)) {
+                $query = $m[1];
+            } elseif (preg_match('/([^\s?]+)\s+đọc là gì/iu', $message, $m)) {
+                $query = $m[1];
+            } else {
+                // fallback extraction from normalized if exact match fails
+                $words = explode(' ', $normalized);
+                $query = end($words); 
+            }
+            return $pick('student_search_vocabulary', ['query' => $query]);
         }
 
         return null;
@@ -674,6 +702,17 @@ class ChatRagService
         }
         if ($toolName === 'student_send_message_to_teacher') {
             return (string) ($result['message'] ?? 'Tin nhắn đã được gửi tới giáo viên.');
+        }
+        if ($toolName === 'student_search_vocabulary') {
+            $data = (array) ($result['data'] ?? []);
+            if (($data['found'] ?? false) !== true) {
+                return (string) ($result['data']['message'] ?? 'Cô không tìm thấy từ này trong dữ liệu hệ thống.');
+            }
+            $results = (array) ($data['results'] ?? []);
+            $first = $results[0] ?? null;
+            if ($first) {
+                return "Chữ \"{$first['tu_chuan']}\" phát âm là \"{$first['phien_am']}\" con nhé. Con há miệng nhỏ, phát âm ngắn gọn nha.";
+            }
         }
 
         return 'Hệ thống đã xử lý yêu cầu bằng tool phù hợp.';

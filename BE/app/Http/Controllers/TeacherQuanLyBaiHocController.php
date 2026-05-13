@@ -278,7 +278,7 @@ class TeacherQuanLyBaiHocController extends Controller
     }
 
     /**
-     * Giáo viên: 1 = Đã duyệt, 0 = Đợi duyệt (mặc định khi tạo mới).
+     * Giáo viên: 0 = Đã duyệt, 1 = Đợi duyệt (mặc định khi tạo mới).
      */
     private function nextThuTuTrongDanhMuc(int $danhMucId): int
     {
