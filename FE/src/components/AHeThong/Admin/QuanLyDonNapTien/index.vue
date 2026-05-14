@@ -69,6 +69,7 @@
                       <th>Mã đơn</th>
                       <th>Người dùng</th>
                       <th>Số tiền</th>
+                      <th>Chứng từ CK</th>
                       <th>Trạng thái</th>
                       <th>Thời gian</th>
                       <th class="text-end">Thao tác</th>
@@ -87,6 +88,24 @@
                         </div>
                       </td>
                       <td class="deposit-amount">{{ formatMoney(d.so_tien) }}</td>
+                      <td>
+                        <div v-if="d.chung_tu_ck_urls && d.chung_tu_ck_urls.length" class="ck-thumb-wrap">
+                          <a
+                            v-for="(u, i) in d.chung_tu_ck_urls.slice(0, 3)"
+                            :key="i"
+                            :href="absoluteUrl(u)"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="ck-thumb-link"
+                          >
+                            <img :src="absoluteUrl(u)" alt="" class="ck-thumb-img" />
+                          </a>
+                          <span v-if="d.chung_tu_ck_urls.length > 3" class="small text-muted ms-1"
+                            >+{{ d.chung_tu_ck_urls.length - 3 }}</span
+                          >
+                        </div>
+                        <span v-else class="text-muted small">—</span>
+                      </td>
                       <td>
                         <span class="gd-status" :class="statusClass(d.trang_thai)">{{ statusLabel(d.trang_thai) }}</span>
                       </td>
@@ -162,6 +181,20 @@
           <p class="text-muted small mb-0">
             Số tiền <span class="fw-bold text-dark">{{ formatMoney(confirmRow.so_tien) }}</span> sẽ được cộng vào ví người dùng.
           </p>
+          <div v-if="confirmRow.chung_tu_ck_urls && confirmRow.chung_tu_ck_urls.length" class="mt-3 pt-3 border-top border-light">
+            <div class="small fw-semibold text-secondary mb-2">Chứng từ CK từ học viên</div>
+            <div class="d-flex flex-wrap gap-2">
+              <a
+                v-for="(u, i) in confirmRow.chung_tu_ck_urls"
+                :key="i"
+                :href="absoluteUrl(u)"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img :src="absoluteUrl(u)" alt="" class="ck-preview-img" />
+              </a>
+            </div>
+          </div>
         </div>
         <div class="modal-footer-custom bg-light">
           <button type="button" class="btn btn-light px-4" @click="confirmRow = null">Huỷ</button>
@@ -184,6 +217,20 @@
         </div>
         <div class="modal-body-custom">
           <p class="small text-muted mb-3">Đơn <strong class="text-dark">{{ rejectRow.ma_don }}</strong></p>
+          <div v-if="rejectRow.chung_tu_ck_urls && rejectRow.chung_tu_ck_urls.length" class="mb-3">
+            <div class="small fw-semibold text-secondary mb-2">Chứng từ CK</div>
+            <div class="d-flex flex-wrap gap-2">
+              <a
+                v-for="(u, i) in rejectRow.chung_tu_ck_urls"
+                :key="i"
+                :href="absoluteUrl(u)"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img :src="absoluteUrl(u)" alt="" class="ck-preview-img" />
+              </a>
+            </div>
+          </div>
           <label class="form-label small fw-semibold text-secondary">Lý do (tuỳ chọn)</label>
           <textarea
             v-model="rejectLyDo"
@@ -246,6 +293,14 @@ export default {
       } catch {
         return iso;
       }
+    },
+    absoluteUrl(u) {
+      const s = String(u || "").trim();
+      if (!s) return "";
+      if (s.startsWith("http://") || s.startsWith("https://")) return s;
+      const base = this.apiBase.replace(/\/$/, "");
+      if (s.startsWith("/")) return `${base}${s}`;
+      return `${base}/${s.replace(/^\//, "")}`;
     },
     statusLabel(tt) {
       const m = {
@@ -583,6 +638,32 @@ export default {
   background-color: #fff;
   border-color: #667eea;
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+}
+
+.ck-thumb-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.ck-thumb-link {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+.ck-thumb-img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  display: block;
+}
+.ck-preview-img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
 }
 
 .empty-state {

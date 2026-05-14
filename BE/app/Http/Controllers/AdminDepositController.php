@@ -29,6 +29,7 @@ class AdminDepositController extends Controller
 
         $data = $paginator->getCollection()->map(function (DonNapTien $d) {
             $u = $d->nguoiDung;
+            $meta = $d->duLieuCallbackArray();
 
             return [
                 'id' => $d->id,
@@ -36,6 +37,8 @@ class AdminDepositController extends Controller
                 'so_tien' => (int) $d->so_tien,
                 'trang_thai' => $d->trang_thai,
                 'created_at' => $d->created_at?->toIso8601String(),
+                'chung_tu_ck_urls' => $meta['chung_tu_ck_urls'] ?? [],
+                'ly_do_tu_choi' => $meta['ly_do_tu_choi'] ?? null,
                 'nguoi_dung' => $u ? [
                     'id' => $u->id,
                     'ho_ten' => $u->ho_ten,

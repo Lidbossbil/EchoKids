@@ -27,4 +27,15 @@ class DonNapTien extends Model
     {
         return $this->belongsTo(NguoiDung::class, 'nguoi_dung_id');
     }
+
+    /** @return array<string, mixed> */
+    public function duLieuCallbackArray(): array
+    {
+        if (! $this->du_lieu_callback) {
+            return [];
+        }
+        $decoded = json_decode($this->du_lieu_callback, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
 }

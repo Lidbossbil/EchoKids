@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\DonNapTien;
+use App\Models\GiaoDichVi;
 use App\Models\Vi;
 use App\Models\YeuCauRutTien;
 use App\Services\DepositDonService;
+use App\Services\GoiPremiumPurchaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -224,12 +226,32 @@ class ViController extends Controller
                 ];
             });
 
-        $merged = $naps->concat($ruts);
+        $vi = $this->viCuaNguoiDung((int) $user->id);
+        $muaGoi = GiaoDichVi::query()
+            ->where('vi_id', $vi->id)
+            ->where('loai_giao_dich', GoiPremiumPurchaseService::LOAI_GIAO_DICH)
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function (GiaoDichVi $g) {
+                return [
+                    '_sort' => $g->created_at?->timestamp ?? 0,
+                    'id' => 'gd-'.$g->id,
+                    'loai' => 'mua_goi',
+                    'mo_ta' => $g->ghi_chu ?? 'Mua gói premium',
+                    'created_at' => $g->created_at?->format('d/m/Y H:i') ?? '',
+                    'so_tien' => (int) $g->so_tien,
+                    'trang_thai' => 'thanh_cong',
+                ];
+            });
+
+        $merged = $naps->concat($ruts)->concat($muaGoi);
 
         if ($loai === 'nap') {
             $merged = $merged->where('loai', 'nap')->values();
         } elseif ($loai === 'rut') {
             $merged = $merged->where('loai', 'rut')->values();
+        } elseif ($loai === 'mua_goi') {
+            $merged = $merged->where('loai', 'mua_goi')->values();
         } elseif (in_array($loai, ['thanh_toan', 'hoan_tien'], true)) {
             $merged = collect();
         }
