@@ -342,6 +342,16 @@ export default {
         this.taiBaiHocHoatDong();
       }, 350);
     },
+    /** Gom mảng lỗi Laravel validation `{ field: ["msg"] }` thành một chuỗi hiển thị. */
+    noiDungLoiTuErrors(errors) {
+      if (!errors || typeof errors !== "object") return "";
+      const msgs = [];
+      Object.values(errors).forEach((v) => {
+        if (Array.isArray(v)) msgs.push(...v.filter(Boolean));
+        else if (typeof v === "string" && v) msgs.push(v);
+      });
+      return msgs.join(" ");
+    },
     taiBaiHocHoatDong() {
       this.loading_bai_hoc = true;
       const params = { page: this.trang_bai_hoc, per_page: 15 };
@@ -370,12 +380,20 @@ export default {
       if (!this.bai_hoc_chon) return;
       this.loi_tao = "";
       this.tao_dang_chay = true;
+      let thoi = Number(this.form_tao.thoi_gian_gioi_han_giay);
+      if (!Number.isFinite(thoi)) thoi = 600;
+      thoi = Math.min(86400, Math.max(30, thoi));
+      let diem = Number(this.form_tao.diem_toi_thieu);
+      if (!Number.isFinite(diem)) diem = 0;
+      diem = Math.min(1000, Math.max(0, diem));
+      let trangThai = Number(this.form_tao.trang_thai);
+      if (!Number.isFinite(trangThai) || (trangThai !== 0 && trangThai !== 1)) trangThai = 0;
       const payload = {
         tieu_de: this.form_tao.tieu_de || null,
         mo_ta_huong_dan: this.form_tao.mo_ta_huong_dan || null,
-        thoi_gian_gioi_han_giay: Number(this.form_tao.thoi_gian_gioi_han_giay),
-        diem_toi_thieu: Number(this.form_tao.diem_toi_thieu),
-        trang_thai: Number(this.form_tao.trang_thai),
+        thoi_gian_gioi_han_giay: thoi,
+        diem_toi_thieu: diem,
+        trang_thai: trangThai,
       };
       axios
         .post(this.apiBase + "/api/teacher/bai-hoc/" + this.bai_hoc_chon.id + "/bai-kiem-tra", payload, {
@@ -383,17 +401,33 @@ export default {
         })
         .then((res) => {
           if (res.data?.status && res.data.data?.id) {
+            const id = res.data.data.id;
             const el = document.getElementById("modalTaoBaiKiemTra");
-            if (window.bootstrap?.Modal) window.bootstrap.Modal.getOrCreateInstance(el)?.hide();
-            this.$router.push("/teacher/quan-ly-bai-kiem-tra/chinh-sua/" + res.data.data.id);
+            if (el && window.bootstrap?.Modal) {
+              const M = window.bootstrap.Modal;
+              const inst = M.getInstance(el) || new M(el);
+              inst.hide();
+            }
+            this.$router.push("/teacher/quan-ly-bai-kiem-tra/chinh-sua/" + id).catch(() => {});
           } else {
-            this.loi_tao = res.data?.message || "Không tạo được.";
+            const d = res.data;
+            this.loi_tao =
+              d?.message || this.noiDungLoiTuErrors(d?.errors) || "Không tạo được.";
           }
         })
         .catch((err) => {
-          const msg = err.response?.data?.message;
-          const errs = err.response?.data?.errors;
-          this.loi_tao = msg || (errs ? JSON.stringify(errs) : "Lỗi mạng hoặc máy chủ.");
+          if (!err.response) {
+            if (err.code === "ERR_NETWORK" || err.message === "Network Error") {
+              this.loi_tao = "Lỗi mạng hoặc máy chủ.";
+            }
+            return;
+          }
+          const d = err.response.data;
+          this.loi_tao =
+            (d && d.message) ||
+            this.noiDungLoiTuErrors(d?.errors) ||
+            (err.response.status === 404 ? "Bài học không tồn tại hoặc chưa hợp lệ." : "") ||
+            "Không tạo được.";
         })
         .finally(() => {
           this.tao_dang_chay = false;

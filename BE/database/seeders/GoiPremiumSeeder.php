@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\GoiPremium\GoiPremiumDoiTuong;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,7 +14,7 @@ class GoiPremiumSeeder extends Seeder
 
         $packages = [
             [
-                'doi_tuong' => 'hoc_vien',
+                'doi_tuong' => GoiPremiumDoiTuong::HocVien->value,
                 'ten_goi' => 'Premium Học viên',
                 'mo_ta' => 'Gợi ý AI chi tiết sau mỗi lượt ghi âm, báo cáo tiến độ theo tuần và ưu tiên hàng đợi chấm phát âm.',
                 'gia' => 149000,
@@ -22,7 +23,7 @@ class GoiPremiumSeeder extends Seeder
                 'trang_thai' => 1,
             ],
             [
-                'doi_tuong' => 'giao_vien',
+                'doi_tuong' => GoiPremiumDoiTuong::GiaoVien->value,
                 'ten_goi' => 'Premium Giáo viên',
                 'mo_ta' => 'Mở rộng lớp học, thống kê lỗi phát âm theo học viên và gói gợi ý soạn bài luyện tập nhanh.',
                 'gia' => 199000,
