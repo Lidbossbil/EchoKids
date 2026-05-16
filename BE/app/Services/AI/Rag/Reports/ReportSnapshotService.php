@@ -4,11 +4,14 @@ namespace App\Services\AI\Rag\Reports;
 
 use App\Models\AiReportSnapshot;
 use App\Models\NguoiDung;
+use App\Models\PhienKiemTra;
 use App\Models\PhienLuyenTap;
 use App\Services\AI\Rag\Analytics\LearningAnalyticsRepository;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\View;
 
 class ReportSnapshotService
 {
@@ -37,6 +40,74 @@ class ReportSnapshotService
         }
 
         $payload = $this->buildStudentPayload($student, $from, $to);
+
+        $snapshot = AiReportSnapshot::query()->updateOrCreate(
+            [
+                'nguoi_dung_id' => $student->id,
+                'loai_bao_cao' => $type,
+                'tu_ngay' => $from->toDateString(),
+                'den_ngay' => $to->toDateString(),
+            ],
+            ['payload_json' => $payload]
+        );
+
+        return $this->serializeSnapshot($snapshot);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getOrCreateStudentWeekly(NguoiDung $student, int $weeksBack = 0): array
+    {
+        [$from, $to] = $this->weekRange($weeksBack);
+        $type = 'student_weekly';
+
+        $existing = AiReportSnapshot::query()
+            ->where('nguoi_dung_id', $student->id)
+            ->where('loai_bao_cao', $type)
+            ->whereDate('tu_ngay', $from->toDateString())
+            ->whereDate('den_ngay', $to->toDateString())
+            ->first();
+
+        if ($existing !== null && $existing->updated_at?->gt(now()->subHours(24))) {
+            return $this->serializeSnapshot($existing);
+        }
+
+        $payload = $this->buildStudentWeeklyPayload($student, $from, $to);
+
+        $snapshot = AiReportSnapshot::query()->updateOrCreate(
+            [
+                'nguoi_dung_id' => $student->id,
+                'loai_bao_cao' => $type,
+                'tu_ngay' => $from->toDateString(),
+                'den_ngay' => $to->toDateString(),
+            ],
+            ['payload_json' => $payload]
+        );
+
+        return $this->serializeSnapshot($snapshot);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getOrCreatePronunciationChart(NguoiDung $student, int $monthsBack = 0): array
+    {
+        [$from, $to] = $this->monthRange($monthsBack);
+        $type = 'student_pronunciation_chart';
+
+        $existing = AiReportSnapshot::query()
+            ->where('nguoi_dung_id', $student->id)
+            ->where('loai_bao_cao', $type)
+            ->whereDate('tu_ngay', $from->toDateString())
+            ->whereDate('den_ngay', $to->toDateString())
+            ->first();
+
+        if ($existing !== null && $existing->updated_at?->gt(now()->subHours(24))) {
+            return $this->serializeSnapshot($existing);
+        }
+
+        $payload = $this->buildPronunciationChartPayload($student, $from, $to);
 
         $snapshot = AiReportSnapshot::query()->updateOrCreate(
             [
@@ -118,20 +189,31 @@ class ReportSnapshotService
 
         $payload = (array) ($snapshot->payload_json ?? []);
         $period = ($payload['period']['from'] ?? '') . ' → ' . ($payload['period']['to'] ?? '');
-        $title = str_contains((string) $snapshot->loai_bao_cao, 'teacher')
-            ? 'Báo cáo lớp EchoKids'
-            : 'Báo cáo học tập EchoKids';
+        $loai = (string) $snapshot->loai_bao_cao;
 
-        $rows = [];
-        foreach ($this->flattenPayload($payload) as $key => $value) {
-            $rows[$key] = (string) $value;
+        if ($loai === 'student_pronunciation_chart') {
+            $title = 'Biểu đồ phát âm EchoKids';
+            $pdfBinary = $this->renderPdfBinary('reports.ai-pronunciation', [
+                'title' => $title,
+                'period' => $period,
+                'payload' => $payload,
+            ]);
+        } else {
+            $title = str_contains($loai, 'teacher')
+                ? 'Báo cáo lớp EchoKids'
+                : (str_contains($loai, 'weekly') ? 'Báo cáo tuần EchoKids' : 'Báo cáo học tập EchoKids');
+
+            $rows = [];
+            foreach ($this->flattenPayload($payload) as $key => $value) {
+                $rows[$key] = (string) $value;
+            }
+
+            $pdfBinary = $this->renderPdfBinary('reports.ai-monthly', [
+                'title' => $title,
+                'period' => $period,
+                'rows' => $rows,
+            ]);
         }
-
-        $pdfBinary = Pdf::loadView('reports.ai-monthly', [
-            'title' => $title,
-            'period' => $period,
-            'rows' => $rows,
-        ])->output();
 
         $basename = 'snapshot_' . $snapshot->id . '_' . now()->format('YmdHis');
         $url = $this->cloudinaryStorage->uploadRawFromString(
@@ -152,6 +234,26 @@ class ReportSnapshotService
     }
 
     /**
+     * @param  array<string, mixed>  $data
+     */
+    private function renderPdfBinary(string $view, array $data): string
+    {
+        $html = View::make($view, $data)->render();
+
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', false);
+        $options->set('defaultFont', 'DejaVu Sans');
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->output();
+    }
+
+    /**
      * @return array{0:Carbon,1:Carbon}
      */
     private function monthRange(int $monthsBack): array
@@ -160,6 +262,139 @@ class ReportSnapshotService
         $end = $start->copy()->endOfMonth();
 
         return [$start, $end];
+    }
+
+    /**
+     * @return array{0:Carbon,1:Carbon}
+     */
+    private function weekRange(int $weeksBack): array
+    {
+        $start = Carbon::now()->startOfWeek()->subWeeks($weeksBack);
+        $end = $start->copy()->endOfWeek();
+
+        return [$start, $end];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildStudentWeeklyPayload(NguoiDung $student, Carbon $from, Carbon $to): array
+    {
+        $sessions = PhienLuyenTap::query()
+            ->where('nguoi_dung_id', $student->id)
+            ->whereBetween('thoi_gian_bat_dau', [$from, $to]);
+
+        $practiceCount = (clone $sessions)->count();
+        $avgScore = round((float) ((clone $sessions)->avg('tong_diem') ?? 0), 1);
+
+        $vocabPracticed = (int) DB::table('chi_tiet_luyen_taps as ct')
+            ->join('phien_luyen_taps as p', 'p.id', '=', 'ct.phien_id')
+            ->where('p.nguoi_dung_id', $student->id)
+            ->whereBetween('p.thoi_gian_bat_dau', [$from, $to])
+            ->distinct()
+            ->count('ct.tu_vung_id');
+
+        $errors = DB::table('chi_tiet_luyen_taps as ct')
+            ->join('phien_luyen_taps as p', 'p.id', '=', 'ct.phien_id')
+            ->where('p.nguoi_dung_id', $student->id)
+            ->whereBetween('p.thoi_gian_bat_dau', [$from, $to])
+            ->selectRaw('SUM(CASE WHEN ct.loi_am_dau = 1 THEN 1 ELSE 0 END) as am_dau')
+            ->selectRaw('SUM(CASE WHEN ct.loi_van = 1 THEN 1 ELSE 0 END) as van')
+            ->selectRaw('SUM(CASE WHEN ct.loi_thanh_dieu = 1 THEN 1 ELSE 0 END) as thanh_dieu')
+            ->first();
+
+        $exams = PhienKiemTra::query()
+            ->where('nguoi_dung_id', $student->id)
+            ->where('trang_thai', PhienKiemTra::TRANG_THAI_NOP)
+            ->whereBetween('thoi_gian_bat_dau', [$from, $to]);
+
+        return [
+            'period' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
+            'practice_sessions' => $practiceCount,
+            'avg_practice_score' => $avgScore,
+            'vocabulary_practiced' => $vocabPracticed,
+            'pronunciation_errors' => [
+                'am_dau' => (int) ($errors->am_dau ?? 0),
+                'van' => (int) ($errors->van ?? 0),
+                'thanh_dieu' => (int) ($errors->thanh_dieu ?? 0),
+                'total' => (int) (($errors->am_dau ?? 0) + ($errors->van ?? 0) + ($errors->thanh_dieu ?? 0)),
+            ],
+            'exams' => [
+                'count' => (clone $exams)->count(),
+                'avg_score' => round((float) ((clone $exams)->avg('tong_diem') ?? 0), 1),
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildPronunciationChartPayload(NguoiDung $student, Carbon $from, Carbon $to): array
+    {
+        $errors = DB::table('chi_tiet_luyen_taps as ct')
+            ->join('phien_luyen_taps as p', 'p.id', '=', 'ct.phien_id')
+            ->where('p.nguoi_dung_id', $student->id)
+            ->whereBetween('p.thoi_gian_bat_dau', [$from, $to])
+            ->selectRaw('SUM(CASE WHEN ct.loi_am_dau = 1 THEN 1 ELSE 0 END) as am_dau')
+            ->selectRaw('SUM(CASE WHEN ct.loi_van = 1 THEN 1 ELSE 0 END) as van')
+            ->selectRaw('SUM(CASE WHEN ct.loi_thanh_dieu = 1 THEN 1 ELSE 0 END) as thanh_dieu')
+            ->first();
+
+        $amDau = (int) ($errors->am_dau ?? 0);
+        $van = (int) ($errors->van ?? 0);
+        $thanhDieu = (int) ($errors->thanh_dieu ?? 0);
+        $total = $amDau + $van + $thanhDieu;
+
+        $pct = static fn (int $n): float => $total > 0 ? round($n / $total * 100, 1) : 0.0;
+
+        $topWords = DB::table('lich_su_loi_phat_ams as ls')
+            ->join('tu_vungs as tv', 'tv.id', '=', 'ls.tu_vung_id')
+            ->where('ls.nguoi_dung_id', $student->id)
+            ->whereBetween('ls.lan_mac_loi_gan_nhat', [$from, $to])
+            ->select('tv.tu_chuan', 'ls.loai_loi', 'ls.so_lan_mac_loi')
+            ->orderByDesc('ls.so_lan_mac_loi')
+            ->limit(10)
+            ->get()
+            ->map(static fn ($row): array => [
+                'word' => (string) $row->tu_chuan,
+                'error_type' => (string) $row->loai_loi,
+                'count' => (int) $row->so_lan_mac_loi,
+            ])
+            ->all();
+
+        $weeklyTrend = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $weekEnd = $cursor->copy()->addDays(6)->min($to);
+            $weekErrors = DB::table('chi_tiet_luyen_taps as ct')
+                ->join('phien_luyen_taps as p', 'p.id', '=', 'ct.phien_id')
+                ->where('p.nguoi_dung_id', $student->id)
+                ->whereBetween('p.thoi_gian_bat_dau', [$cursor, $weekEnd])
+                ->selectRaw('SUM(CASE WHEN ct.loi_am_dau = 1 THEN 1 ELSE 0 END) as am_dau')
+                ->selectRaw('SUM(CASE WHEN ct.loi_van = 1 THEN 1 ELSE 0 END) as van')
+                ->selectRaw('SUM(CASE WHEN ct.loi_thanh_dieu = 1 THEN 1 ELSE 0 END) as thanh_dieu')
+                ->first();
+
+            $weeklyTrend[] = [
+                'week' => $cursor->format('Y-m-d'),
+                'am_dau' => (int) ($weekErrors->am_dau ?? 0),
+                'van' => (int) ($weekErrors->van ?? 0),
+                'thanh_dieu' => (int) ($weekErrors->thanh_dieu ?? 0),
+            ];
+            $cursor->addDays(7);
+        }
+
+        return [
+            'period' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
+            'error_distribution' => [
+                'am_dau' => ['count' => $amDau, 'percent' => $pct($amDau)],
+                'van' => ['count' => $van, 'percent' => $pct($van)],
+                'thanh_dieu' => ['count' => $thanhDieu, 'percent' => $pct($thanhDieu)],
+                'total' => $total,
+            ],
+            'top_words' => $topWords,
+            'weekly_trend' => $weeklyTrend,
+        ];
     }
 
     /**

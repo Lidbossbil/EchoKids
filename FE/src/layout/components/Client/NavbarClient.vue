@@ -168,7 +168,7 @@
           </div>
 
           <router-link
-            to="/profile"
+            to="/thong-tin-ca-nhan"
             class="user-menu-item"
           >
             <i class="fa fa-user-circle"></i>

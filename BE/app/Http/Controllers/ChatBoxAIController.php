@@ -74,6 +74,7 @@ class ChatBoxAIController extends Controller
             'message' => $result['message'],
             'action_url' => $result['action_url'] ?? null,
             'action_label' => $result['action_label'] ?? null,
+            'report_snapshot' => $result['report_snapshot'] ?? null,
             'meta' => $result['meta'] ?? [],
         ]);
     }

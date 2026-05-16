@@ -8,6 +8,7 @@ use App\Services\AI\Rag\Reports\ReportSnapshotService;
 use App\Services\AI\Rag\Support\PremiumFeatureService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AiReportController extends Controller
 {
@@ -90,6 +91,12 @@ class AiReportController extends Controller
                 ? $this->reportSnapshotService->exportPdf($snapshot)
                 : $this->reportSnapshotService->exportCsv($snapshot);
         } catch (\Throwable $e) {
+            Log::error('AiReportController export failed', [
+                'snapshot_id' => $snapshotId,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Không tạo được file báo cáo. Vui lòng thử lại sau.',

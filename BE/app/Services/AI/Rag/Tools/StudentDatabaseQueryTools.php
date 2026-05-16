@@ -47,9 +47,9 @@ class StudentDatabaseQueryTools
             ],
             [
                 'name' => 'student_get_session_history_with_details',
-                'description' => 'Get detailed session history with practice time and scores',
+                'description' => 'Danh sách chi tiết từng phiên luyện tập: tên bài học, ngày giờ, điểm mỗi phiên. Dùng khi học viên hỏi "cụ thể từng phiên", "điểm từng buổi", "mỗi phiên được bao nhiêu điểm", "which sessions", "score for each session".',
                 'args' => [
-                    'days' => 'integer, days to retrieve (default 60)',
+                    'days' => 'integer, days to retrieve (default 7)',
                     'limit' => 'integer, max sessions (default 20)',
                 ],
             ],
@@ -208,15 +208,16 @@ class StudentDatabaseQueryTools
      */
     private function getSessionHistoryWithDetails(NguoiDung $student, array $args): array
     {
-        $days = max(1, (int) ($args['days'] ?? 60));
+        $days = max(1, (int) ($args['days'] ?? 7));
         $limit = min(50, max(1, (int) ($args['limit'] ?? 20)));
         $from = Carbon::now()->subDays($days);
 
-        $sessions = PhienLuyenTap::where('nguoi_dung_id', $student->id)
+        $sessions = PhienLuyenTap::with('baiHoc:id,tieu_de')
+            ->where('nguoi_dung_id', $student->id)
             ->where('thoi_gian_bat_dau', '>=', $from)
             ->orderByDesc('thoi_gian_bat_dau')
             ->limit($limit)
-            ->get(['id', 'thoi_gian_bat_dau', 'thoi_gian_ket_thuc', 'tong_diem']);
+            ->get(['id', 'bai_hoc_id', 'thoi_gian_bat_dau', 'thoi_gian_ket_thuc', 'tong_diem']);
 
         return [
             'ok' => true,
@@ -230,9 +231,10 @@ class StudentDatabaseQueryTools
 
                     return [
                         'id' => $session->id,
-                        'start_time' => $session->thoi_gian_bat_dau->format('Y-m-d H:i'),
+                        'lesson_title' => (string) ($session->baiHoc?->tieu_de ?? 'Không rõ'),
+                        'start_time' => $session->thoi_gian_bat_dau->format('d/m/Y H:i'),
                         'duration_minutes' => $duration,
-                        'score' => $session->tong_diem,
+                        'score' => (int) $session->tong_diem,
                     ];
                 })->toArray(),
             ],
