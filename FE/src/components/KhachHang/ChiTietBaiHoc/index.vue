@@ -1045,6 +1045,23 @@ export default {
             this.isScoring = true;
         },
 
+        async pollChamDiemResult(jobId, token, maxAttempts = 60) {
+            for (let i = 0; i < maxAttempts; i++) {
+                const res = await axios.get(
+                    `${API_BASE}/api/cham-diem-phat-am/${jobId}`,
+                    { headers: { Authorization: 'Bearer ' + token } }
+                );
+                if (res.data?.status === 'completed') {
+                    return res.data;
+                }
+                if (res.data?.status === 'failed') {
+                    throw new Error(res.data?.message || 'Chấm điểm thất bại');
+                }
+                await new Promise((r) => setTimeout(r, 1000));
+            }
+            throw new Error('Hết thời gian chờ kết quả chấm điểm');
+        },
+
         async submitAudio(blob) {
             const token = localStorage.getItem('token_nguoi_dung');
             if (!token || !this.phien_id || !this.selectedLetter.id) {
@@ -1071,13 +1088,17 @@ export default {
                         },
                     }
                 );
-                this.scoringResult = res.data;
-                if (res.data && typeof res.data.diem === "number") {
+                let payload = res.data;
+                if (res.status === 202 && payload?.job_id) {
+                    payload = await this.pollChamDiemResult(payload.job_id, token);
+                }
+                this.scoringResult = payload;
+                if (payload && typeof payload.diem === 'number') {
                     await this.markReviewCompletedAfterScore();
                 }
             } catch (e) {
                 console.error('submitAudio error', e);
-                alert('Có lỗi xảy ra khi chấm điểm. Vui lòng thử lại!');
+                alert(e?.message || 'Có lỗi xảy ra khi chấm điểm. Vui lòng thử lại!');
             } finally {
                 this.isScoring = false;
             }

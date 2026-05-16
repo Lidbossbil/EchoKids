@@ -113,7 +113,7 @@ class PremiumFeatureService
             'can_purchase' => $goi !== null && ! $hasActive,
             'wallet_balance' => $balance,
             'sufficient_balance' => $goi !== null && $balance >= $price,
-            'profile_path' => $isTeacher ? '/teacher/profile' : '/profile',
+            'profile_path' => $isTeacher ? '/teacher/thong-tin-ca-nhan' : '/thong-tin-ca-nhan',
             'package' => $goi === null ? null : [
                 'ten_goi' => (string) $goi->ten_goi,
                 'mo_ta' => (string) ($goi->mo_ta ?? ''),

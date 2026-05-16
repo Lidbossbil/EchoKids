@@ -295,6 +295,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::post('/cham-diem-phat-am', [ChiTietLuyenTapController::class, 'chamDiemPhatAm']);
+    Route::get('/cham-diem-phat-am/{jobId}', [ChiTietLuyenTapController::class, 'ketQuaChamDiem']);
 
     Route::prefix('/deposit')->group(function () {
         Route::post('/create', [DepositController::class, 'create']);

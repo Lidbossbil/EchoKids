@@ -20,8 +20,22 @@ class PremiumReportTools
     {
         return [
             [
+                'name' => 'student_get_weekly_report',
+                'description' => 'Premium weekly learning report for student (7-day summary)',
+                'args' => [
+                    'weeks_back' => 'integer, 0=current week (default 0)',
+                ],
+            ],
+            [
                 'name' => 'student_get_monthly_report',
                 'description' => 'Premium monthly learning report for student',
+                'args' => [
+                    'months_back' => 'integer, 0=current month (default 0)',
+                ],
+            ],
+            [
+                'name' => 'student_get_pronunciation_chart',
+                'description' => 'Premium pronunciation error chart and trends for student',
                 'args' => [
                     'months_back' => 'integer, 0=current month (default 0)',
                 ],
@@ -42,7 +56,24 @@ class PremiumReportTools
      */
     public function execute(NguoiDung $user, string $toolName, array $args): array
     {
-        $isTeacher = (int) $user->vai_tro_id === NguoiDung::ROLE_TEACHER;
+        if ($toolName === 'student_get_weekly_report') {
+            $gate = $this->premiumFeatureService->gate($user, PremiumFeatureService::FEATURE_WEEKLY_REPORT);
+            if (! $gate['allowed']) {
+                return [
+                    'ok' => false,
+                    'premium_required' => true,
+                    'message' => $gate['upsell_message'],
+                    'action_url' => $gate['action_url'],
+                ];
+            }
+
+            $snapshot = $this->reportSnapshotService->getOrCreateStudentWeekly(
+                $user,
+                max(0, (int) ($args['weeks_back'] ?? 0))
+            );
+
+            return ['ok' => true, 'data' => $snapshot];
+        }
 
         if ($toolName === 'student_get_monthly_report') {
             $gate = $this->premiumFeatureService->gate($user, PremiumFeatureService::FEATURE_MONTHLY_REPORT);
@@ -56,6 +87,25 @@ class PremiumReportTools
             }
 
             $snapshot = $this->reportSnapshotService->getOrCreateStudentMonthly(
+                $user,
+                max(0, (int) ($args['months_back'] ?? 0))
+            );
+
+            return ['ok' => true, 'data' => $snapshot];
+        }
+
+        if ($toolName === 'student_get_pronunciation_chart') {
+            $gate = $this->premiumFeatureService->gate($user, PremiumFeatureService::FEATURE_PRONUNCIATION_CHART);
+            if (! $gate['allowed']) {
+                return [
+                    'ok' => false,
+                    'premium_required' => true,
+                    'message' => $gate['upsell_message'],
+                    'action_url' => $gate['action_url'],
+                ];
+            }
+
+            $snapshot = $this->reportSnapshotService->getOrCreatePronunciationChart(
                 $user,
                 max(0, (int) ($args['months_back'] ?? 0))
             );
@@ -94,5 +144,17 @@ class PremiumReportTools
     public function toolNames(): array
     {
         return collect($this->definitions())->pluck('name')->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function studentPremiumToolNames(): array
+    {
+        return [
+            'student_get_weekly_report',
+            'student_get_monthly_report',
+            'student_get_pronunciation_chart',
+        ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services\AI\Rag\Tools;
 
+use App\Models\CauHinhHeThong;
 use App\Models\NguoiDung;
 use App\Services\AI\Rag\Analytics\LearningAnalyticsRepository;
 
@@ -52,6 +53,11 @@ class TeacherClassTools
                     'limit' => 'integer, max students (default 10)',
                 ],
             ],
+            [
+                'name' => 'teacher_get_commission_rate',
+                'description' => 'Tỷ lệ hoa hồng (%) mà hệ thống EchoKids giữ lại khi học viên mua lộ trình của thầy/cô. Dùng khi hỏi "hoa hồng", "chiết khấu", "hệ thống giữ bao nhiêu", "tôi nhận được bao nhiêu %".',
+                'args' => [],
+            ],
         ];
     }
 
@@ -90,11 +96,34 @@ class TeacherClassTools
                     ),
                 ],
             ],
+            'teacher_get_commission_rate' => $this->getCommissionRate(),
             default => [
                 'ok' => false,
                 'message' => 'Công cụ không được hỗ trợ.',
             ],
         };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getCommissionRate(): array
+    {
+        $row = CauHinhHeThong::query()
+            ->where('ma_cau_hinh', 'ti_le_hoa_hong_platform')
+            ->first();
+
+        $phanTram = (float) ($row?->du_lieu['phan_tram'] ?? 0);
+        $phanTram = max(0.0, min(100.0, $phanTram));
+        $teacherPct = 100 - $phanTram;
+
+        return [
+            'ok' => true,
+            'data' => [
+                'ti_le_platform' => $phanTram,
+                'ti_le_giao_vien' => $teacherPct,
+            ],
+        ];
     }
 
     /**

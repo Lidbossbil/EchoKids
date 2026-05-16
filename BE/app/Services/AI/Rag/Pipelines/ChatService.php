@@ -22,6 +22,13 @@ use Throwable;
 
 final class ChatService
 {
+    private const PREMIUM_REPORT_TOOL_NAMES = [
+        'student_get_weekly_report',
+        'student_get_monthly_report',
+        'student_get_pronunciation_chart',
+        'teacher_get_class_report',
+    ];
+
     private const SYSTEM_PROMPT_STUDENT = <<<'TXT'
 Bạn là trợ lý học tập của EchoKids. Xưng "cô", gọi user là "con".
 - User đang chat là HỌC VIÊN (không phải trợ lý). Khi hỏi "tôi là ai"/tên: trả lời theo [Người dùng đang chat], không yêu cầu ID hay bước xác minh.
@@ -73,6 +80,7 @@ TXT;
         $toolsUsed = [];
         $actionUrl = null;
         $actionLabel = null;
+        $reportSnapshot = null;
         $source = 'fallback';
         $errorDetail = null;
 
@@ -126,6 +134,28 @@ TXT;
 
         if ($role === 'student' && $this->isTeacherLessonCountQuestion($normalizedMessage, $rawLowerMessage)) {
             $direct = $this->tryTeacherLessonCountFallback($user, $message, $english);
+            if ($direct !== null) {
+                $this->saveTurn($session->id, $message, (string) $direct['message']);
+
+                return [
+                    'session_id' => $session->id,
+                    'message' => (string) $direct['message'],
+                    'action_url' => null,
+                    'action_label' => null,
+                    'meta' => [
+                        'assistant_role' => $role,
+                        'source' => 'db_direct',
+                        'llm_provider' => $this->llmProvider(),
+                        'input_type' => $inputType,
+                        'tools_used' => (array) ($direct['tools_used'] ?? []),
+                        'error_detail' => null,
+                    ],
+                ];
+            }
+        }
+
+        if ($role === 'student' && $this->isSessionDetailQuestion($normalizedMessage, $rawLowerMessage)) {
+            $direct = $this->trySessionDetailFallback($user, $english);
             if ($direct !== null) {
                 $this->saveTurn($session->id, $message, (string) $direct['message']);
 
@@ -256,6 +286,28 @@ TXT;
             }
         }
 
+        if ($role === 'teacher' && $this->isTeacherCommissionQuestion($normalizedMessage, $rawLowerMessage)) {
+            $direct = $this->tryTeacherCommissionFallback($user, $english);
+            if ($direct !== null) {
+                $this->saveTurn($session->id, $message, (string) $direct['message']);
+
+                return [
+                    'session_id' => $session->id,
+                    'message' => (string) $direct['message'],
+                    'action_url' => null,
+                    'action_label' => null,
+                    'meta' => [
+                        'assistant_role' => $role,
+                        'source' => 'db_direct',
+                        'llm_provider' => $this->llmProvider(),
+                        'input_type' => $inputType,
+                        'tools_used' => (array) ($direct['tools_used'] ?? []),
+                        'error_detail' => null,
+                    ],
+                ];
+            }
+        }
+
         try {
             $contents = $this->buildGeminiContents($history, $message);
 
@@ -272,6 +324,21 @@ TXT;
                     if ($actionUrl === null && ! empty($result['action_url'])) {
                         $actionUrl = (string) $result['action_url'];
                         $actionLabel = 'tại đây';
+                    }
+
+                    if (
+                        in_array($toolName, self::PREMIUM_REPORT_TOOL_NAMES, true)
+                        && ($result['ok'] ?? false) === true
+                        && is_array($result['data'] ?? null)
+                        && ! empty($result['data']['snapshot_id'])
+                    ) {
+                        $reportSnapshot = [
+                            'snapshot_id' => (int) $result['data']['snapshot_id'],
+                            'loai_bao_cao' => (string) ($result['data']['loai_bao_cao'] ?? ''),
+                            'tu_ngay' => $result['data']['tu_ngay'] ?? null,
+                            'den_ngay' => $result['data']['den_ngay'] ?? null,
+                            'pdf_url' => $result['data']['pdf_url'] ?? null,
+                        ];
                     }
 
                     $contents[] = [
@@ -329,6 +396,7 @@ TXT;
             'message' => $answer,
             'action_url' => $actionUrl,
             'action_label' => $actionLabel,
+            'report_snapshot' => $reportSnapshot,
             'meta' => [
                 'assistant_role' => $role,
                 'source' => $source,
@@ -509,9 +577,10 @@ TXT;
         );
 
         if ($this->premiumGuard->hasActivePremium($user)) {
+            $allowed = PremiumReportTools::studentPremiumToolNames();
             $defs = array_merge($defs, array_filter(
                 $this->premium->definitions(),
-                static fn (array $def): bool => ($def['name'] ?? '') === 'student_get_monthly_report',
+                static fn (array $def): bool => in_array($def['name'] ?? '', $allowed, true),
             ));
         }
 
@@ -535,7 +604,10 @@ TXT;
                 || str_starts_with($name, 'student_get_vocabulary_mastery')
                 || str_starts_with($name, 'student_get_teacher_suggestions') => $this->studentCatalog->execute($user, $name, $args),
             $name === 'student_get_premium_purchase_guide' || $name === 'teacher_get_premium_purchase_guide' => $this->premiumGuide->execute($user, $name),
-            $name === 'student_get_monthly_report' || $name === 'teacher_get_class_report' => $this->premium->execute($user, $name, $args),
+            $name === 'student_get_weekly_report'
+                || $name === 'student_get_monthly_report'
+                || $name === 'student_get_pronunciation_chart'
+                || $name === 'teacher_get_class_report' => $this->premium->execute($user, $name, $args),
             str_starts_with($name, 'teacher_') => $this->teacher->execute($user, $name, $args),
             str_starts_with($name, 'student_') => $this->studentDb->execute($user, $name, $args),
             default => ['ok' => false, 'message' => 'Tool không hỗ trợ.'],
@@ -647,7 +719,14 @@ TXT;
                 }
             }
 
-            if ($this->isScoreQuestion($normalized, $rawLower)) {
+            if ($this->isSessionDetailQuestion($normalized, $rawLower)) {
+                $sessionFallback = $this->trySessionDetailFallback($user, $english);
+                if ($sessionFallback !== null) {
+                    return $sessionFallback;
+                }
+            }
+
+            if ($this->isScoreQuestion($normalized, $rawLower) && ! $this->isSessionDetailQuestion($normalized, $rawLower)) {
                 $result = $this->studentDb->execute($user, 'student_get_personal_dashboard_data', ['days' => 7]);
                 if (($result['ok'] ?? false) === true) {
                     return [
@@ -743,6 +822,10 @@ TXT;
 
         if ($role === 'teacher' && $this->isTeacherOwnLessonCountQuestion($normalized, $rawLower)) {
             return $this->tryTeacherOwnLessonCountFallback($user, $english);
+        }
+
+        if ($role === 'teacher' && $this->isTeacherCommissionQuestion($normalized, $rawLower)) {
+            return $this->tryTeacherCommissionFallback($user, $english);
         }
 
         return null;
@@ -1689,6 +1772,120 @@ TXT;
         $preview = implode(', ', array_slice($names, 0, 8));
 
         return "Có {$count} học viên đang theo học thầy cô, gồm: {$preview}… và các bạn khác.";
+    }
+
+    private function isSessionDetailQuestion(string $normalized, string $rawLower): bool
+    {
+        if (preg_match('/\b(which|each|every|specific|detail)\b.*\b(session|sessions)\b/i', $rawLower) === 1) {
+            return true;
+        }
+        if (preg_match('/\b(score|point)\b.*\b(each|every|per|specific)\b/i', $rawLower) === 1) {
+            return true;
+        }
+        if (preg_match('/\b(each|every)\b.*\b(session|practice)\b/i', $rawLower) === 1) {
+            return true;
+        }
+
+        return (str_contains($normalized, 'cu the') || str_contains($normalized, 'chi tiet') || str_contains($normalized, 'tung phien') || str_contains($normalized, 'moi phien'))
+            && (str_contains($normalized, 'diem') || str_contains($normalized, 'phien') || str_contains($normalized, 'buoi'));
+    }
+
+    /**
+     * @return array{message:string,source:string,tools_used:list<array{name:string,args:array<string,mixed>}>}|null
+     */
+    private function trySessionDetailFallback(NguoiDung $user, bool $english): ?array
+    {
+        $result = $this->studentDb->execute($user, 'student_get_session_history_with_details', ['days' => 7, 'limit' => 10]);
+        if (($result['ok'] ?? false) !== true) {
+            return null;
+        }
+
+        return [
+            'message' => $this->formatSessionDetailAnswer((array) ($result['data'] ?? []), $english),
+            'source' => 'db_fallback',
+            'tools_used' => [['name' => 'student_get_session_history_with_details', 'args' => ['days' => 7, 'limit' => 10]]],
+        ];
+    }
+
+    private function formatSessionDetailAnswer(array $data, bool $english): string
+    {
+        $total = (int) ($data['total_sessions'] ?? 0);
+        /** @var list<array{lesson_title:string,start_time:string,duration_minutes:int,score:int}> $sessions */
+        $sessions = (array) ($data['sessions'] ?? []);
+
+        if ($total === 0 || $sessions === []) {
+            return $english
+                ? 'You have no practice sessions in the last 7 days.'
+                : 'Con chưa có phiên luyện tập nào trong 7 ngày qua.';
+        }
+
+        if ($english) {
+            $lines = [];
+            foreach ($sessions as $i => $s) {
+                $lesson = (string) ($s['lesson_title'] ?? 'Unknown');
+                $time = (string) ($s['start_time'] ?? '');
+                $score = (int) ($s['score'] ?? 0);
+                $lines[] = ($i + 1) . ". \"{$lesson}\" ({$time}): {$score} points";
+            }
+
+            return "In the last 7 days you had {$total} practice session(s): " . implode('; ', $lines) . '.';
+        }
+
+        $lines = [];
+        foreach ($sessions as $i => $s) {
+            $lesson = (string) ($s['lesson_title'] ?? 'Không rõ');
+            $time = (string) ($s['start_time'] ?? '');
+            $score = (int) ($s['score'] ?? 0);
+            $lines[] = ($i + 1) . ". \"{$lesson}\" ({$time}): {$score} điểm";
+        }
+
+        return "Trong 7 ngày qua con có {$total} phiên luyện tập: " . implode('; ', $lines) . '.';
+    }
+
+    private function isTeacherCommissionQuestion(string $normalized, string $rawLower): bool
+    {
+        if (preg_match('/\b(commission|fee|platform fee|revenue share)\b/i', $rawLower) === 1) {
+            return true;
+        }
+
+        return str_contains($normalized, 'hoa hong')
+            || str_contains($normalized, 'chiet khau')
+            || str_contains($normalized, 'ti le chia')
+            || str_contains($normalized, 'he thong giu')
+            || str_contains($normalized, 'he thong lay')
+            || str_contains($normalized, 'he thong huong')
+            || (str_contains($normalized, 'ti le') && str_contains($normalized, 'he thong'))
+            || (str_contains($normalized, 'nhan duoc bao nhieu') && str_contains($normalized, 'lo trinh'))
+            || (str_contains($normalized, 'duoc nhan') && str_contains($normalized, 'lo trinh'));
+    }
+
+    /**
+     * @return array{message:string,source:string,tools_used:list<array{name:string,args:array<string,mixed>}>}|null
+     */
+    private function tryTeacherCommissionFallback(NguoiDung $user, bool $english): ?array
+    {
+        $result = $this->teacher->execute($user, 'teacher_get_commission_rate', []);
+        if (($result['ok'] ?? false) !== true) {
+            return null;
+        }
+
+        return [
+            'message' => $this->formatCommissionRateAnswer((array) ($result['data'] ?? []), $english),
+            'source' => 'db_fallback',
+            'tools_used' => [['name' => 'teacher_get_commission_rate', 'args' => []]],
+        ];
+    }
+
+    private function formatCommissionRateAnswer(array $data, bool $english): string
+    {
+        $platformPct = (float) ($data['ti_le_platform'] ?? 0);
+        $teacherPct = (float) ($data['ti_le_giao_vien'] ?? 100);
+
+        if ($english) {
+            return "EchoKids retains {$platformPct}% of each course purchase as a platform fee. You receive the remaining {$teacherPct}%.";
+        }
+
+        return "Khi học viên mua lộ trình, EchoKids giữ lại {$platformPct}% phí nền tảng. Thầy/cô nhận được {$teacherPct}% còn lại trên mỗi giao dịch.";
     }
 
     private function formatTeacherOwnLessonCountAnswer(array $data, bool $english): string

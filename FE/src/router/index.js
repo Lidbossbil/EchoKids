@@ -41,7 +41,7 @@ const routes = [
     meta: { layout: "blank" },
   },
   {
-    path: "/profile",
+    path: "/thong-tin-ca-nhan",
     component: () => import("../components/Client/Profile/index.vue"),
     meta: { layout: "client" },
   },

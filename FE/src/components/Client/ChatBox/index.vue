@@ -365,6 +365,22 @@
                     🚀 {{ msg.action_label || "Khám phá ngay" }}
                   </button>
                 </div>
+                <div v-if="msg.report_snapshot?.snapshot_id" class="mt-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger w-100 rounded-pill fw-bold shadow-sm"
+                    style="font-size: 0.85rem"
+                    :disabled="msg.pdfLoading"
+                    @click.prevent="downloadReportPdf(msg)"
+                  >
+                    <span
+                      v-if="msg.pdfLoading"
+                      class="spinner-border spinner-border-sm me-1"
+                    ></span>
+                    <i v-else class="fa fa-file-pdf me-1"></i>
+                    {{ reportPdfButtonLabel(msg.report_snapshot) }}
+                  </button>
+                </div>
               </div>
               <div class="d-flex align-items-center gap-2 mt-1">
                 <small
@@ -918,6 +934,47 @@ export default {
       const token = this.getAuthToken();
       return token ? { Authorization: "Bearer " + token } : {};
     },
+    reportPdfButtonLabel(snapshot) {
+      const map = {
+        student_weekly: "Tải PDF báo cáo tuần",
+        student_monthly: "Tải PDF báo cáo tháng",
+        student_pronunciation_chart: "Tải PDF biểu đồ phát âm",
+        teacher_monthly: "Tải PDF báo cáo lớp",
+      };
+      return map[snapshot?.loai_bao_cao] || "Tải PDF báo cáo";
+    },
+    async downloadReportPdf(msg) {
+      const snap = msg?.report_snapshot;
+      if (!snap?.snapshot_id) {
+        return;
+      }
+      if (snap.pdf_url) {
+        window.open(snap.pdf_url, "_blank", "noopener,noreferrer");
+        return;
+      }
+      msg.pdfLoading = true;
+      try {
+        const res = await axios.get(
+          `http://127.0.0.1:8000/api/ai-reports/${snap.snapshot_id}/export-pdf`,
+          { headers: this.getAuthHeader() },
+        );
+        const url = res?.data?.download_url;
+        if (!url) {
+          throw new Error("Không tạo được file PDF.");
+        }
+        snap.pdf_url = url;
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch (err) {
+        alert(
+          this.parseApiErrorMessage(
+            err,
+            "Không tải được PDF. Vui lòng thử lại sau.",
+          ),
+        );
+      } finally {
+        msg.pdfLoading = false;
+      }
+    },
     syncActiveLessonContext() {
       if (this.isTeacherMode) {
         this.activeLessonContext = null;
@@ -1326,15 +1383,7 @@ export default {
     },
     navigateToAction(url) {
       if (!url) return;
-      let path = String(url);
-      if (
-        this.isTeacherMode &&
-        path.startsWith("/") &&
-        !path.startsWith("/teacher")
-      ) {
-        path = `/teacher${path}`;
-      }
-      this.$router.push(path);
+      this.$router.push(String(url));
     },
     hoiCauGoiY(question) {
       if (!question || this.isTyping) return;
@@ -1597,6 +1646,8 @@ export default {
               data.message || "EchoKids chưa nghe rõ, bạn thử nhập lại nhé.",
             action_url: data.action_url || null,
             action_label: data.action_label || null,
+            report_snapshot: data.report_snapshot || null,
+            pdfLoading: false,
             time: this.formatMessageTime(
               data.created_at || data.time || new Date(),
             ),
